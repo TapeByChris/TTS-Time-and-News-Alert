@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Candlesticks Dashboard (Audio + Yahoo + FF Econ Calendar)</title>
+<style>
+    :root {
+        --bg: #121212;
+        --card: #1e1e1e;
+        --alert: #7f1d1d;
+        --text: #ffffff;
+        --dim: #888;
+        --accent: #007bff;
+        --input: #2a2a2a;
+        --border: #333;
+        --green: #28a745;
+        --red: #dc3545;
+    }
+    html { font-size: 16px; }
+    body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: 'Roboto Mono', monospace;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        overflow: hidden;
+        transition: background 0.3s;
+    }
+
+    /* TOP BAR */
+    .top-bar {
+        width: 100%;
+        padding: 12px 20px;
+        background: rgba(0,0,0,0.3);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-sizing: border-box;
+    }
+    .btn-group { display: flex; gap: 10px; }
+    .header-btn {
+        background: transparent;
+        border: 1px solid var(--dim);
+        color: var(--text);
+        padding: 5px 15px;
+        cursor: pointer;
+        font-weight: bold;
+        border-radius: 4px;
+        font-size: 0.8rem;
+    }
+    .header-btn:hover { background: rgba(255,255,255,0.1); }
+    .help-btn { border-color: var(--accent); color: var(--accent); }
+    .help-btn:hover { background: var(--accent); color: white; }
+
+    /* AUDIO BUTTON */
+    .audio-btn {
+        border: 1px solid var(--red);
+        color: var(--red);
+        min-width: 100px;
+        cursor: pointer;
+        border-radius: 4px;
+        background: #111;
+        padding: 5px 10px;
+        font-family: inherit;
+    }
+    .audio-btn.on {
+        border-color: var(--green);
+        color: var(--green);
+        background: rgba(40, 167, 69, 0.1);
+    }
+
+    /* GRID */
+    .grid-wrapper {
+        width: 100%;
+        max-height: 55vh;
+        overflow-y: auto;
+        display: flex;
+        justify-content: center;
+        padding: 20px 0 10px 0;
+        box-sizing: border-box;
+    }
+    .grid-container {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        width: 95%;
+        max-width: 1400px;
+    }
+
+    /* CARD */
+    .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 10rem;
+        transition: background 0.2s, box-shadow 0.2s, border-color 0.2s;
+    }
+    .card.alert {
+        background: var(--alert) !important;
+        border-color: #ff4444;
+        box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+    }
+    .alert .c-title, .alert label { color: #ffcccc !important; }
+
+    .c-title {
+        color: var(--dim);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+        letter-spacing: 1px;
+    }
+    .c-time {
+        font-size: 2.8rem;
+        font-weight: bold;
+        line-height: 1.1;
+    }
+    .c-ms { font-size: 1.2rem; color: var(--dim); }
+
+    /* INPUTS / ROWS */
+    .row {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 5px;
+        padding-top: 5px;
+        border-top: 1px solid var(--border);
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    input {
+        background: var(--input);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 2px 5px;
+        border-radius: 3px;
+        font-family: inherit;
+        font-size: 0.8rem;
+        text-align: center;
+        width: 70px;
+    }
+    .align-in {
+        width: 60px !important;
+        color: var(--accent) !important;
+        font-weight: bold;
+    }
+    .rth { grid-column: span 2; }
+    .rth-inputs {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 5px;
+        justify-content: center;
+    }
+    .mute-label {
+        font-size: 0.7rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        color: var(--dim);
+        cursor: pointer;
+    }
+    .mute-label input {
+        width: auto;
+    }
+
+    /* BUTTON BASE */
+    button {
+        cursor: pointer;
+        border-radius: 4px;
+        border: 1px solid #555;
+        background: #333;
+        color: white;
+        padding: 5px 10px;
+        font-family: inherit;
+    }
+    button:hover { background: #444; }
+
+    /* OVERLAYS */
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.85);
+        z-index: 1000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: 0.3s;
+    }
+    .overlay.visible {
+        opacity: 1;
+        pointer-events: all;
+    }
+    .modal {
+        background: #222;
+        border: 1px solid #444;
+        border-radius: 10px;
+        padding: 30px;
+        max-width: 700px;
+        width: 90%;
+        color: #ddd;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .modal h2 {
+        border-bottom: 1px solid #444;
+        padding-bottom: 10px;
+        margin-top: 0;
+        color: var(--accent);
+    }
+    .modal h3 {
+        color: #ddd;
+        margin-top: 20px;
+        font-size: 1.1rem;
+    }
+    .modal p, .modal li {
+        color: #aaa;
+        line-height: 1.5;
+        font-size: 0.9rem;
+    }
+    .close-btn {
+        float: right;
+        cursor: pointer;
+        font-size: 1.5rem;
+        color: #888;
+    }
+    .close-btn:hover { color: white; }
+
+    /* DESIGN STUDIO */
+    .cf-grp { margin-bottom: 20px; }
+    .cf-grp h4 {
+        margin-bottom: 10px;
+        font-size: 0.8rem;
+        color: #aaa;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .cf-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #333;
+        gap: 10px;
+    }
+    input[type="color"] {
+        border: none;
+        width: 40px;
+        height: 30px;
+        cursor: pointer;
+        background: none;
+        padding: 0;
+    }
+    input[type="range"] { width: 150px; cursor: pointer; }
+    .rst-btn {
+        width: 100%;
+        background: #d32f2f;
+        margin-top: 10px;
+        padding: 12px;
+        font-weight: bold;
+        border: none;
+    }
+    .rst-btn:hover { background: #b71c1c; }
+    .theme-select {
+        background: #111827;
+        border-radius: 4px;
+        border: 1px solid #4b5563;
+        color: #e5e7eb;
+        padding: 4px 8px;
+        font-size: 0.8rem;
+        font-family: inherit;
+    }
+
+    /* NEWS AREA */
+    .news-wrapper {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 5px 20px 15px 20px;
+        overflow-y: auto;
+        flex: 1 0 auto;
+        border-top: 1px solid var(--border);
+        background: radial-gradient(circle at top, rgba(255,255,255,0.02), transparent 55%);
+    }
+    .news-container {
+        background: #181818;
+        border: 1px solid var(--border);
+        padding: 10px 15px;
+        border-radius: 10px;
+        max-width: 1400px;
+        margin: 0 auto 8px auto;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.35);
+    }
+    .news-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding-bottom: 4px;
+        border-bottom: 1px solid #27272f;
+    }
+    .news-title {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--dim);
+    }
+    .news-controls {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .news-select {
+        background: #222;
+        border: 1px solid #555;
+        color: #ddd;
+        border-radius: 4px;
+        padding: 3px 6px;
+        font-size: 0.75rem;
+        font-family: inherit;
+    }
+    .news-voice-btn {
+        border-color: var(--accent);
+        font-size: 0.75rem;
+        padding: 4px 8px;
+    }
+    .news-voice-btn.off {
+        border-color: #555;
+        color: #aaa;
+    }
+    .news-refresh {
+        font-size: 0.8rem;
+        padding: 4px 8px;
+        border-radius: 4px;
+    }
+    .news-list {
+        max-height: 35vh;
+        overflow-y: auto;
+        margin-top: 8px;
+    }
+    .news-item {
+        padding: 6px 0;
+        border-bottom: 1px solid #333;
+        font-size: 0.8rem;
+    }
+    .news-item:last-child { border-bottom: none; }
+    .news-item strong {
+        color: #8fc0ff;
+        margin-right: 4px;
+    }
+    .news-item a {
+        color: #9cf;
+        text-decoration: none;
+    }
+    .news-item a:hover { text-decoration: underline; }
+    .news-time {
+        color: var(--dim);
+        font-size: 0.75rem;
+        margin-right: 6px;
+        font-weight: 600;
+    }
+
+    /* ECON CALENDAR */
+    .ff-label {
+        color: #93c5fd;
+        font-weight: 600;
+        margin-right: 4px;
+    }
+    .ff-time {
+        font-size: 0.75rem;
+        color: var(--dim);
+        margin-right: 6px;
+        font-weight: 600;
+    }
+    .ff-cur {
+        font-size: 0.75rem;
+        color: #a5b4fc;
+        margin-right: 6px;
+    }
+    .ff-badge {
+        display: inline-block;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        margin-right: 6px;
+        font-weight: 600;
+    }
+    .ff-high {
+        background: #991b1b;
+        color: #fee2e2;
+    }
+    .ff-medium {
+        background: #9a3412;
+        color: #ffedd5;
+    }
+    .ff-low {
+        background: #854d0e;
+        color: #fef3c7;
+    }
+    .ff-filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 5px;
+        font-size: 0.75rem;
+        color: var(--dim);
+        align-items: center;
+    }
+    .ff-filter-row label {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        cursor: pointer;
+    }
+    .ff-filter-row input[type="checkbox"] {
+        width: auto;
+    }
+    .econ-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 6px;
+        font-size: 0.75rem;
+        align-items: center;
+        color: var(--dim);
+    }
+
+    .news-item.ff-past {
+        opacity: 0.45;
+    }
+    .news-item.ff-soon {
+        background: rgba(239, 68, 68, 0.12);
+        border-radius: 4px;
+        padding: 6px 8px;
+        border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+</style>
+</head>
+<body>
+
+<!-- SETTINGS OVERLAY -->
+<div id="set-ov" class="overlay" onclick="tog('set-ov',0)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <span class="close-btn" onclick="tog('set-ov',0)">&times;</span>
+    <h2>Design Studio</h2>
+
+    <div class="cf-grp">
+        <h4>Theme Presets</h4>
+        <div class="cf-row">
+            <span>Theme</span>
+            <select id="theme-select" class="theme-select">
+                <option value="bloomberg">Bloomberg Black</option>
+                <option value="nightops">Night Ops Blue</option>
+                <option value="minimal">Minimal Grey</option>
+                <option value="terminal">Terminal Green</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="cf-grp">
+        <h4>Interface Scale</h4>
+        <div class="cf-row">
+            <span>Global Text Size</span>
+            <input type="range" min="12" max="24" value="16" oninput="upTh('size',this.value)">
+        </div>
+    </div>
+
+    <div class="cf-grp">
+        <h4>Colors</h4>
+        <div class="cf-row">
+            <span>Main Background</span>
+            <input type="color" id="p-bg" oninput="upTh('--bg',this.value)">
+        </div>
+        <div class="cf-row">
+            <span>Card Background</span>
+            <input type="color" id="p-cd" oninput="upTh('--card',this.value)">
+        </div>
+        <div class="cf-row">
+            <span>Text Color</span>
+            <input type="color" id="p-tx" oninput="upTh('--text',this.value)">
+        </div>
+        <div class="cf-row">
+            <span>Alert Background (Warning)</span>
+            <input type="color" id="p-al" oninput="upTh('--alert',this.value)">
+        </div>
+    </div>
+
+    <!-- Visible timeframes -->
+    <div class="cf-grp">
+        <h4>Visible Timeframes</h4>
+        <div id="tf-list" style="max-height:200px;overflow-y:auto;font-size:0.8rem;"></div>
+    </div>
+
+    <button class="rst-btn" onclick="resetTh()">RESET TO DEFAULTS</button>
+  </div>
+</div>
+
+<!-- HELP OVERLAY -->
+<div id="hlp-ov" class="overlay" onclick="tog('hlp-ov',0)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <span class="close-btn" onclick="tog('hlp-ov',0)">&times;</span>
+    <h2>Dashboard Help</h2>
+    <h3>1. Timers</h3>
+    <p>Each card is a candle timeframe. The timer shows how much time is left before the current candle closes.</p>
+    <p><strong>ALERT AT</strong> is the number of seconds (or HH:MM:SS) before close where the card turns red and (if not muted) the system speaks an alert.</p>
+    <h3>2. Mute per Timeframe & Visibility</h3>
+    <p>Use the <strong>MUTE</strong> checkbox on each card to silence audio alerts for that timeframe while keeping the visual red highlight.</p>
+    <p>In <strong>SETTINGS → Visible Timeframes</strong> you can hide/show each timeframe card entirely.</p>
+    <h3>3. RTH Session</h3>
+    <p>The RTH card counts down until market open, then until close. It will speak when the alert threshold is hit.</p>
+    <h3>4. News & Economic Calendar</h3>
+    <p>Yahoo has its own date and manual refresh. Economic calendar uses Forex Factory JSON via your local Node server.</p>
+    <p>Impact colors: <span class="ff-badge ff-high">High (Red)</span> <span class="ff-badge ff-medium">Medium (Orange)</span> <span class="ff-badge ff-low">Low (Yellow)</span></p>
+  </div>
+</div>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+    <div>
+        <span style="color:var(--dim);font-size:0.7rem">NY TIME (ET)</span><br>
+        <span id="ny" style="font-size:1.4rem;font-weight:bold">--:--</span>
+    </div>
+    <div>
+        <button id="snd-btn" class="audio-btn" onclick="togSnd()">SOUND: OFF</button>
+    </div>
+    <div class="btn-group">
+        <button class="header-btn" onclick="tog('set-ov',1)">SETTINGS</button>
+        <button class="header-btn help-btn" onclick="tog('hlp-ov',1)">HELP</button>
+    </div>
+</div>
+
+<!-- TIMERS GRID -->
+<div class="grid-wrapper">
+    <div class="grid-container" id="grid"></div>
+</div>
+
+<!-- NEWS AREA (YAHOO + ECON CALENDAR) -->
+<div class="news-wrapper">
+    <!-- Yahoo Finance -->
+    <div class="news-container">
+        <div class="news-header">
+            <div class="news-title">Market News Feed (Yahoo Finance)</div>
+            <div class="news-controls">
+                <span style="font-size:0.75rem;color:var(--dim);">Date:</span>
+                <input type="date" id="news-date" class="news-select">
+                <button class="news-refresh" onclick="refreshNews()">REFRESH NEWS</button>
+                <button id="news-voice-btn" class="news-voice-btn" onclick="togNewsVoice()">News TTS: ON</button>
+            </div>
+        </div>
+        <div id="news-list" class="news-list">Loading…</div>
+    </div>
+
+    <!-- Economic Calendar (Forex Factory via backend) -->
+    <div class="news-container">
+        <div class="news-header">
+            <div class="news-title">Economic Calendar (Forex Factory)</div>
+            <div class="econ-controls">
+                <span>ECON DATE:</span>
+                <input type="date" id="econ-date" class="news-select">
+                <button class="news-refresh" onclick="refreshEcon()">REFRESH CALENDAR</button>
+            </div>
+        </div>
+        <div class="ff-filter-row">
+            <span>Currencies:</span>
+            <label><input type="checkbox" class="ff-country" value="USD" checked> USD</label>
+            <label><input type="checkbox" class="ff-country" value="EUR" checked> EUR</label>
+            <label><input type="checkbox" class="ff-country" value="GBP" checked> GBP</label>
+            <label><input type="checkbox" class="ff-country" value="JPY" checked> JPY</label>
+            <label><input type="checkbox" class="ff-country" value="CAD"> CAD</label>
+            <label><input type="checkbox" class="ff-country" value="AUD"> AUD</label>
+            <label><input type="checkbox" class="ff-country" value="NZD"> NZD</label>
+            <label><input type="checkbox" class="ff-country" value="CHF"> CHF</label>
+            <label><input type="checkbox" class="ff-country" value="CNY"> CNY</label>
+            <span>Impact:</span>
+            <label><input type="checkbox" class="ff-imp" value="high" checked> <span class="ff-badge ff-high">Red</span></label>
+            <label><input type="checkbox" class="ff-imp" value="medium" checked> <span class="ff-badge ff-medium">Orange</span></label>
+            <label><input type="checkbox" class="ff-imp" value="low" checked> <span class="ff-badge ff-low">Yellow</span></label>
+        </div>
+        <div id="ff-list" class="news-list">Loading…</div>
+    </div>
+</div>
+
+<script>
+/* THEME SYSTEM */
+const THEMES = {
+    bloomberg: {
+        '--bg': '#050608',
+        '--card': '#111318',
+        '--text': '#f5f5f5',
+        '--alert': '#7f1d1d'
+    },
+    nightops: {
+        '--bg': '#020617',
+        '--card': '#0b1120',
+        '--text': '#e5e7eb',
+        '--alert': '#7f1d1d'
+    },
+    minimal: {
+        '--bg': '#111827',
+        '--card': '#1f2933',
+        '--text': '#e5e7eb',
+        '--alert': '#7f1d1d'
+    },
+    terminal: {
+        '--bg': '#020c07',
+        '--card': '#041b11',
+        '--text': '#d1fae5',
+        '--alert': '#14532d'
+    }
+};
+
+/* TIMER CONFIG */
+const config = [
+    { label: "1 Minute",   seconds: 60,    type: "standard", warn: "00:00:10" },
+    { label: "2 Minute",   seconds: 120,   type: "standard", warn: "00:00:15" },
+    { label: "3 Minute",   seconds: 180,   type: "standard", warn: "00:00:20" },
+    { label: "5 Minute",   seconds: 300,   type: "standard", warn: "00:00:30" },
+    { label: "10 Minute",  seconds: 600,   type: "standard", warn: "00:01:00" },
+    { label: "15 Minute",  seconds: 900,   type: "standard", warn: "00:01:30" },
+    { label: "30 Minute",  seconds: 1800,  type: "standard", warn: "00:03:00" },
+    { label: "1 Hour",     seconds: 3600,  type: "standard", warn: "00:05:00" },
+    { label: "2 Hour",     seconds: 7200,  type: "aligned",  warn: "00:10:00" },
+    { label: "4 Hour",     seconds: 14400, type: "aligned",  warn: "00:15:00" }
+];
+
+let offset = 0;
+let audioOn = false;
+let newsSpeechOn = true;
+let lastSpeak = {};   // avoid repeating same-second TTS
+
+/* Visible timeframes */
+let visibleTimeframes = [];
+
+/* NEWS STATE */
+const seenNewsIds = new Set();   // Yahoo
+const seenFFIds = new Set();     // Econ calendar
+
+/* Yahoo RSS via AllOrigins */
+const YF_RSS = "https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EGSPC&region=US&lang=en-US";
+const YF_FEED_BASE = "https://api.allorigins.win/raw?url=";
+
+/* ECON BACKEND (Forex Factory proxy) */
+const ECON_API_BASE = "http://localhost:3000/api/ff-calendar";
+
+/* INIT */
+function init() {
+    loadVisibleTimeframes();
+    renderTimerGrid();
+    buildTimeframeSettingsUI();
+    loadTh();
+    initNewsControls();
+    loop();
+    refreshNews(); // initial Yahoo
+}
+
+/* Theme functions */
+function applyTheme(themeKey, save = true) {
+    const theme = THEMES[themeKey] || THEMES['bloomberg'];
+    Object.entries(theme).forEach(([k, v]) => {
+        document.documentElement.style.setProperty(k, v);
+        localStorage.setItem(k, v);
+    });
+
+    const bgInput = document.getElementById('p-bg');
+    const cdInput = document.getElementById('p-cd');
+    const txInput = document.getElementById('p-tx');
+    const alInput = document.getElementById('p-al');
+    if (bgInput) bgInput.value = theme['--bg'];
+    if (cdInput) cdInput.value = theme['--card'];
+    if (txInput) txInput.value = theme['--text'];
+    if (alInput) alInput.value = theme['--alert'];
+
+    const sel = document.getElementById('theme-select');
+    if (sel) sel.value = themeKey;
+
+    if (save) {
+        localStorage.setItem('theme', themeKey);
+    }
+}
+
+/* Visible timeframes state */
+function loadVisibleTimeframes() {
+    const saved = localStorage.getItem("tf-visible");
+    if (!saved) {
+        visibleTimeframes = config.map(() => true);
+    } else {
+        const set = new Set(saved.split(",").map(x => parseInt(x,10)));
+        visibleTimeframes = config.map((_, i) => set.has(i));
+    }
+}
+function saveVisibleTimeframes() {
+    const indices = config
+        .map((_, i) => visibleTimeframes[i] ? i : null)
+        .filter(i => i !== null);
+    localStorage.setItem("tf-visible", indices.join(","));
+}
+
+/* Build timer cards grid */
+function renderTimerGrid() {
+    let html = "";
+
+    config.forEach((c, i) => {
+        if (!visibleTimeframes[i]) return;
+
+        const savedWarn = localStorage.getItem('w-'+i) || c.warn;
+        const savedMute = localStorage.getItem('mute-'+i) === '1';
+        let timeHTML =
+            c.seconds === 60
+              ? '<span id="t-'+i+'" class="c-time">00</span><span id="m-'+i+'" class="c-ms">.00</span>'
+              : '<span id="t-'+i+'" class="c-time">00:00</span>';
+
+        let alignHTML = "";
+        if (c.type === "aligned") {
+            const alignTime = localStorage.getItem('a-'+i) || (c.seconds === 14400 ? "17:00" : "00:00");
+            alignHTML =
+              '<div style="margin-bottom:5px">' +
+                '<label style="justify-content:center">' +
+                'ALIGN TO: <input type="time" id="a-'+i+'" class="align-in" value="'+alignTime+'" onchange="save()">' +
+                '</label>' +
+              '</div>';
+        }
+
+        html +=
+          '<div class="card" id="c-'+i+'">' +
+            '<div class="c-title">'+c.label+'</div>' +
+            alignHTML +
+            '<div>'+timeHTML+'</div>' +
+            '<div class="row">' +
+              '<label>ALERT AT: <input type="text" id="w-'+i+'" value="'+savedWarn+'" onchange="save()"></label>' +
+              '<label class="mute-label"><input type="checkbox" id="mu-'+i+'" '+(savedMute?'checked':'')+' onchange="save()"> MUTE</label>' +
+            '</div>' +
+          '</div>';
+    });
+
+    // RTH SESSION CARD
+    const rO = localStorage.getItem('ro') || "09:30";
+    const rC = localStorage.getItem('rc') || "16:00";
+    const rW = localStorage.getItem('rw') || "00:15:00";
+
+    html +=
+      '<div class="card rth" id="c-rth">' +
+        '<div class="rth-inputs">' +
+          '<label>OPEN <input type="time" id="ro" value="'+rO+'" onchange="save()"></label>' +
+          '<label>CLOSE <input type="time" id="rc" value="'+rC+'" onchange="save()"></label>' +
+        '</div>' +
+        '<div>' +
+          '<span id="trth" class="c-time">--</span>' +
+          '<div id="srth" style="font-size:0.8rem;color:var(--dim)">LOAD</div>' +
+        '</div>' +
+        '<div class="row">' +
+          '<label>ALERT AT: <input type="text" id="rw" value="'+rW+'" onchange="save()"></label>' +
+        '</div>' +
+      '</div>';
+
+    document.getElementById("grid").innerHTML = html;
+}
+
+/* Rebuild grid when visible timeframes change */
+function rebuildGrid() {
+    renderTimerGrid();
+}
+
+/* Build timeframe settings UI */
+function buildTimeframeSettingsUI() {
+    const cont = document.getElementById("tf-list");
+    if (!cont) return;
+    let inner = "";
+    config.forEach((c, i) => {
+        const checked = visibleTimeframes[i] !== false;
+        inner += `
+            <label style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+                <input type="checkbox" class="tf-toggle" data-idx="${i}" ${checked ? "checked" : ""}>
+                <span>${c.label}</span>
+            </label>
+        `;
+    });
+    cont.innerHTML = inner;
+    Array.from(cont.querySelectorAll(".tf-toggle")).forEach(cb => {
+        cb.addEventListener("change", () => {
+            const idx = parseInt(cb.getAttribute("data-idx"), 10);
+            visibleTimeframes[idx] = cb.checked;
+            saveVisibleTimeframes();
+            rebuildGrid();
+        });
+    });
+}
+
+/* MAIN LOOP */
+function loop() {
+    try {
+        const nowMs = Date.now() + offset;
+        const now = new Date(nowMs);
+
+        const nyEl = document.getElementById('ny');
+        if (!nyEl) {
+            requestAnimationFrame(loop);
+            return;
+        }
+
+        const nyStr = now.toLocaleTimeString(
+            'en-US',
+            { timeZone: 'America/New_York', hour12: true }
+        );
+        nyEl.innerText = nyStr;
+
+        const timeMatch = nyStr.match(/(\d+):(\d+):(\d+)\s*(AM|PM)/i);
+        if (!timeMatch) {
+            requestAnimationFrame(loop);
+            return;
+        }
+        let h = parseInt(timeMatch[1],10);
+        const m = parseInt(timeMatch[2],10);
+        const s = parseInt(timeMatch[3],10);
+        const ampm = timeMatch[4].toUpperCase();
+        if (ampm === "PM" && h !== 12) h += 12;
+        if (ampm === "AM" && h === 12) h = 0;
+
+        const ms = 999 - now.getMilliseconds();
+
+        // Timer cards
+        config.forEach((c, i) => {
+            if (!visibleTimeframes[i]) return;
+
+            let secRem = 0;
+            const cardEl = document.getElementById('c-'+i);
+            const tEl = document.getElementById('t-'+i);
+            if (!cardEl || !tEl) return;
+
+            if (c.type === "standard") {
+                const total = Math.floor(nowMs/1000);
+                secRem = c.seconds - (total % c.seconds) - 1;
+            } else {
+                const aEl = document.getElementById('a-'+i);
+                const alignVal = aEl && aEl.value ? aEl.value : "00:00";
+                const aParts = alignVal.split(':').map(Number);
+                const aH = !Number.isNaN(aParts[0]) ? aParts[0] : 0;
+                const intervalHrs = c.seconds / 3600;
+                let dist = (aH - h) % intervalHrs;
+                if (dist <= 0) dist += intervalHrs;
+                secRem = ((dist - 1) * 3600) + ((59 - m) * 60) + (59 - s);
+            }
+
+            if (c.seconds === 60) {
+                tEl.innerText = (secRem < 10 ? "0" : "") + secRem;
+                const msEl = document.getElementById('m-'+i);
+                if (msEl) {
+                    msEl.innerText = "." + Math.floor(ms/10).toString().padStart(2, "0");
+                }
+            } else {
+                tEl.innerText = fmt(secRem, c.seconds >= 3600);
+            }
+
+            const wEl = document.getElementById('w-'+i);
+            const thresh = parseTime(wEl ? wEl.value : c.warn);
+
+            if (secRem <= thresh) {
+                cardEl.classList.add("alert");
+            } else {
+                cardEl.classList.remove("alert");
+            }
+
+            const muteEl = document.getElementById('mu-'+i);
+            const isMuted = muteEl ? muteEl.checked : false;
+
+            if (secRem === thresh) {
+                if (lastSpeak['c-'+i] !== secRem && !isMuted) {
+                    speak(c.label + " candle closing in " + thresh + " seconds");
+                    lastSpeak['c-'+i] = secRem;
+                }
+            } else {
+                lastSpeak['c-'+i] = -1;
+            }
+        });
+
+        // RTH LOGIC
+        const roEl = document.getElementById('ro');
+        const rcEl = document.getElementById('rc');
+        const trthEl = document.getElementById('trth');
+        const srthEl = document.getElementById('srth');
+        const rCardEl = document.getElementById('c-rth');
+
+        if (roEl && rcEl && trthEl && srthEl && rCardEl) {
+            const roParts = roEl.value.split(':').map(Number);
+            const rcParts = rcEl.value.split(':').map(Number);
+            const ro = [
+                !Number.isNaN(roParts[0]) ? roParts[0] : 9,
+                !Number.isNaN(roParts[1]) ? roParts[1] : 30
+            ];
+            const rc = [
+                !Number.isNaN(rcParts[0]) ? rcParts[0] : 16,
+                !Number.isNaN(rcParts[1]) ? rcParts[1] : 0
+            ];
+
+            const nowS = (h*3600) + (m*60) + s;
+            const oS = (ro[0]*3600) + (ro[1]*60);
+            const cS = (rc[0]*3600) + (rc[1]*60);
+
+            const rwEl = document.getElementById('rw');
+            const rthThresh = parseTime(rwEl ? rwEl.value : "00:15:00");
+
+            if (nowS >= oS && nowS < cS) {
+                const diff = cS - nowS - 1;
+                trthEl.innerText = fmt(diff, true);
+                srthEl.innerText = "MARKET OPEN";
+
+                if (diff <= rthThresh) {
+                    rCardEl.classList.add("alert");
+                } else {
+                    rCardEl.classList.remove("alert");
+                }
+
+                if (diff === rthThresh && lastSpeak['rth'] !== diff) {
+                    speak("Session closing in " + rthThresh + " seconds");
+                    lastSpeak['rth'] = diff;
+                }
+            } else {
+                rCardEl.classList.remove("alert");
+                if (nowS < oS) {
+                    trthEl.innerText = fmt(oS - nowS - 1, true);
+                    srthEl.innerText = "PRE-MARKET";
+                } else {
+                    trthEl.innerText = "CLOSED";
+                    srthEl.innerText = "SESSION ENDED";
+                }
+            }
+        }
+    } catch (e) {
+        console.warn("Loop error caught:", e);
+    }
+
+    requestAnimationFrame(loop);
+}
+
+/* HELPERS */
+function speak(msg) {
+    if (!audioOn) return;
+    try {
+        const u = new SpeechSynthesisUtterance(msg);
+        u.rate = 1.1;
+        window.speechSynthesis.speak(u);
+    } catch (e) {
+        console.warn("Speech error:", e);
+    }
+}
+function togSnd() {
+    audioOn = !audioOn;
+    const btn = document.getElementById('snd-btn');
+    if (!btn) return;
+    if (audioOn) {
+        btn.innerText = "SOUND: ON";
+        btn.classList.add('on');
+        speak("Audio enabled");
+    } else {
+        btn.innerText = "SOUND: OFF";
+        btn.classList.remove('on');
+    }
+}
+function parseTime(v) {
+    if (!v || typeof v !== "string") return 0;
+    const p = v.split(':').map(Number);
+    if (p.length === 3) return (p[0]*3600) + (p[1]*60) + p[2];
+    if (p.length === 2) return (p[0]*60) + p[1];
+    return Number.isNaN(p[0]) ? 0 : p[0];
+}
+function fmt(s, showHours) {
+    if (s < 0) s = 0;
+    const hr = Math.floor(s / 3600);
+    const mn = Math.floor((s % 3600) / 60);
+    const sc = s % 60;
+    const base = (mn < 10 ? "0" : "") + mn + ":" + (sc < 10 ? "0" : "") + sc;
+    return showHours ? hr + ":" + base : base;
+}
+function save() {
+    config.forEach((c, i) => {
+        const wEl = document.getElementById('w-'+i);
+        if (wEl) localStorage.setItem('w-'+i, wEl.value);
+        const muEl = document.getElementById('mu-'+i);
+        if (muEl) localStorage.setItem('mute-'+i, muEl.checked ? '1' : '0');
+        if (c.type === "aligned") {
+            const aEl = document.getElementById('a-'+i);
+            if (aEl) localStorage.setItem('a-'+i, aEl.value);
+        }
+    });
+    const roEl = document.getElementById('ro');
+    const rcEl = document.getElementById('rc');
+    const rwEl = document.getElementById('rw');
+    if (roEl) localStorage.setItem('ro', roEl.value);
+    if (rcEl) localStorage.setItem('rc', rcEl.value);
+    if (rwEl) localStorage.setItem('rw', rwEl.value);
+}
+function tog(id, s) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (s) el.classList.add("visible");
+    else el.classList.remove("visible");
+}
+function upTh(p, v) {
+    if (p === "size") {
+        document.documentElement.style.fontSize = v + "px";
+        localStorage.setItem('sz', v);
+    } else {
+        document.documentElement.style.setProperty(p, v);
+        localStorage.setItem(p, v);
+        if (p === '--bg') { const i = document.getElementById('p-bg'); if (i) i.value = v; }
+        if (p === '--card'){ const i = document.getElementById('p-cd'); if (i) i.value = v; }
+        if (p === '--text'){ const i = document.getElementById('p-tx'); if (i) i.value = v; }
+        if (p === '--alert'){ const i = document.getElementById('p-al'); if (i) i.value = v; }
+    }
+}
+function loadTh() {
+    const themeKey = localStorage.getItem('theme') || 'bloomberg';
+    applyTheme(themeKey, false);
+
+    // Apply stored overrides (if user used color pickers before)
+    ['--bg','--card','--text','--alert'].forEach(k => {
+        const v = localStorage.getItem(k);
+        if (v) {
+            document.documentElement.style.setProperty(k, v);
+            if (k === '--bg')  { const i = document.getElementById('p-bg'); if (i) i.value = v; }
+            if (k === '--card'){ const i = document.getElementById('p-cd'); if (i) i.value = v; }
+            if (k === '--text'){ const i = document.getElementById('p-tx'); if (i) i.value = v; }
+            if (k === '--alert'){const i = document.getElementById('p-al'); if (i) i.value = v; }
+        }
+    });
+
+    const sz = localStorage.getItem('sz');
+    if (sz) {
+        document.documentElement.style.fontSize = sz + "px";
+    }
+
+    // Bind theme select
+    const sel = document.getElementById('theme-select');
+    if (sel && !sel.dataset.bound) {
+        sel.dataset.bound = '1';
+        sel.value = themeKey;
+        sel.addEventListener('change', e => applyTheme(e.target.value, true));
+    }
+}
+function resetTh() {
+    localStorage.clear();
+    location.reload();
+}
+
+/* DATE HELPERS */
+function getTodayNY() {
+    const now = new Date();
+    const nyStr = now.toLocaleString("en-US", { timeZone: "America/New_York" });
+    const ny = new Date(nyStr);
+    const y = ny.getFullYear();
+    const m = String(ny.getMonth()+1).padStart(2, "0");
+    const d = String(ny.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+}
+
+/* ---------------------- NEWS: YAHOO ---------------------- */
+function refreshYahoo() {
+    const dateInput = document.getElementById("news-date");
+    const selectedDate = dateInput && dateInput.value ? dateInput.value : getTodayNY();
+    const url = YF_FEED_BASE + encodeURIComponent(YF_RSS);
+
+    fetch(url)
+        .then(r => r.text())
+        .then(str => {
+            let doc;
+            try {
+                doc = new window.DOMParser().parseFromString(str, "text/xml");
+            } catch (e) {
+                console.warn("DOMParser error on Yahoo feed:", e);
+                document.getElementById("news-list").innerText = "Could not parse news.";
+                return;
+            }
+
+            const items = Array.from(doc.querySelectorAll("item")).slice(0, 25);
+            const listEl = document.getElementById("news-list");
+            if (!listEl) return;
+
+            let html = "";
+            let firstNewTitle = null;
+
+            items.forEach(it => {
+                const guid = it.querySelector("guid")?.textContent ||
+                             it.querySelector("link")?.textContent ||
+                             it.querySelector("title")?.textContent || "";
+                const title = it.querySelector("title")?.textContent?.trim() || "Untitled";
+                const link  = it.querySelector("link")?.textContent?.trim() || "#";
+                const pub   = it.querySelector("pubDate")?.textContent || "";
+                let tlabel = "";
+                let dStr = "";
+
+                if (pub) {
+                    const d = new Date(pub);
+                    if (!Number.isNaN(d.getTime())) {
+                        tlabel = d.toLocaleTimeString("en-US", {
+                            hour: "numeric",
+                            minute: "2-digit",
+                            hour12: true
+                        });
+                        const yy = d.getFullYear();
+                        const mm = String(d.getMonth()+1).padStart(2,"0");
+                        const dd = String(d.getDate()).padStart(2,"0");
+                        dStr = `${yy}-${mm}-${dd}`;
+                    }
+                }
+
+                if (selectedDate && dStr && dStr !== selectedDate) return;
+
+                if (!seenNewsIds.has(guid)) {
+                    seenNewsIds.add(guid);
+                    if (!firstNewTitle) firstNewTitle = title;
+                }
+
+                html += '<div class="news-item">' +
+                            (tlabel ? '<span class="news-time">'+tlabel+'</span>' : '') +
+                            '<strong>Yahoo Finance:</strong>' +
+                            '<a href="'+link+'" target="_blank" rel="noopener noreferrer">'+title+'</a>' +
+                        '</div>';
+            });
+
+            listEl.innerHTML = html || "No headlines for selected date.";
+
+            if (firstNewTitle && audioOn && newsSpeechOn) {
+                speak("Yahoo Finance: " + firstNewTitle);
+            }
+        })
+        .catch(err => {
+            console.warn("Yahoo Finance feed error:", err);
+            const listEl = document.getElementById("news-list");
+            if (listEl) listEl.innerText = "Could not load news.";
+        });
+}
+
+/* ---------------------- ECON CALENDAR (Forex Factory) ---------------------- */
+function impactToLevel(impact) {
+    if (!impact) return "low";
+    const s = impact.toLowerCase();
+    if (s.includes("high")) return "high";
+    if (s.includes("medium")) return "medium";
+    if (s.includes("low")) return "low";
+    return "low";
+}
+
+function refreshEcon() {
+    const econDateInput = document.getElementById("econ-date");
+    const selectedDate = econDateInput && econDateInput.value ? econDateInput.value : getTodayNY();
+
+    const countryCbs = Array.from(document.querySelectorAll(".ff-country"));
+    const selectedCountries = countryCbs
+        .filter(cb => cb.checked)
+        .map(cb => cb.value);
+    const countriesVal = selectedCountries.join(",");
+
+    const impCheckboxes = Array.from(document.querySelectorAll(".ff-imp"));
+    const imps = impCheckboxes
+        .filter(cb => cb.checked)
+        .map(cb => cb.value.toLowerCase());
+    const impParam = imps.join(",");
+
+    // Save filters
+    localStorage.setItem("econ-date", selectedDate);
+    localStorage.setItem("ff-countries", countriesVal);
+    localStorage.setItem("ff-imp", impParam || "high,medium,low");
+
+    const listEl = document.getElementById("ff-list");
+    if (listEl) listEl.innerText = "Loading…";
+
+    const url =
+        ECON_API_BASE +
+        `?date=${encodeURIComponent(selectedDate)}` +
+        (countriesVal ? `&countries=${encodeURIComponent(countriesVal)}` : "") +
+        (impParam ? `&imp=${encodeURIComponent(impParam)}` : "");
+
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            if (!Array.isArray(data)) data = [];
+            const el = document.getElementById("ff-list");
+            if (!el) return;
+
+            let html = "";
+            let firstNew = null;
+            const now = new Date();
+
+            data.forEach(ev => {
+                try {
+                    const id = (ev.country || "") + "|" + (ev.title || "") + "|" + (ev.date || "");
+                    if (!seenFFIds.has(id)) {
+                        seenFFIds.add(id);
+                        if (!firstNew) firstNew = ev;
+                    }
+
+                    const level = impactToLevel(ev.impact);
+                    const when = ev.date ? new Date(ev.date) : null;
+                    const timeLabel = when
+                        ? when.toLocaleTimeString("en-US", {
+                              timeZone: "America/New_York",
+                              hour: "numeric",
+                              minute: "2-digit",
+                              hour12: true
+                          })
+                        : "";
+
+                    const minsDiff = when ? (when - now) / 60000 : 9999;
+                    let extraClass = "";
+                    if (minsDiff < 0) extraClass = " ff-past";
+                    else if (minsDiff <= 30) extraClass = " ff-soon";
+
+                    const country = ev.country || "";
+                    const title = ev.title || "Event";
+
+                    const niceImpact =
+                        level === "high" ? "High" :
+                        level === "medium" ? "Medium" : "Low";
+
+                    html +=
+                        '<div class="news-item'+extraClass+'">' +
+                            (timeLabel ? '<span class="ff-time">'+timeLabel+'</span>' : '') +
+                            (country ? '<span class="ff-cur">['+country+']</span>' : '') +
+                            '<span class="ff-badge ff-'+level+'">'+niceImpact+'</span>' +
+                            '<span class="ff-label">Economic:</span>' +
+                            '<span>'+title+'</span>' +
+                        '</div>';
+                } catch (e) {
+                    console.warn("Error mapping econ event:", e);
+                }
+            });
+
+            el.innerHTML = html || "No events found for selected filters.";
+
+            if (firstNew && audioOn && newsSpeechOn) {
+                const level = impactToLevel(firstNew.impact);
+                const when = firstNew.date ? new Date(firstNew.date) : null;
+                const timeLabel = when
+                    ? when.toLocaleTimeString("en-US", {
+                          timeZone: "America/New_York",
+                          hour: "numeric",
+                          minute: "2-digit",
+                          hour12: true
+                      })
+                    : "";
+                const country = firstNew.country || "";
+                const title = firstNew.title || "event";
+
+                const what =
+                    level === "high" ? "High impact" :
+                    level === "medium" ? "Medium impact" : "Low impact";
+
+                const tPart = timeLabel ? " at " + timeLabel : "";
+                const cPart = country ? " in " + country : "";
+
+                speak("Economic calendar " + what + " event" + tPart + cPart + ": " + title);
+            }
+        })
+        .catch(err => {
+            console.warn("Econ calendar fetch error:", err);
+            const el = document.getElementById("ff-list");
+            if (el) el.innerText = "Could not load economic calendar.";
+        });
+}
+
+/* Combined manual refresh for Yahoo */
+function refreshNews() {
+    refreshYahoo();
+}
+
+/* NEWS CONTROLS */
+function initNewsControls() {
+    const voiceBtn = document.getElementById("news-voice-btn");
+    const dateInput = document.getElementById("news-date");
+    const econDateInput = document.getElementById("econ-date");
+    const impCheckboxes = Array.from(document.querySelectorAll(".ff-imp"));
+    const countryCbs = Array.from(document.querySelectorAll(".ff-country"));
+
+    // Yahoo date
+    const savedDate = localStorage.getItem("news-date") || getTodayNY();
+    if (dateInput) {
+        dateInput.value = savedDate;
+        dateInput.addEventListener("change", () => {
+            localStorage.setItem("news-date", dateInput.value || getTodayNY());
+            seenNewsIds.clear();
+            refreshYahoo();
+        });
+    }
+
+    // Econ date
+    const savedEconDate = localStorage.getItem("econ-date") || getTodayNY();
+    if (econDateInput) {
+        econDateInput.value = savedEconDate;
+        econDateInput.addEventListener("change", () => {
+            seenFFIds.clear();
+            refreshEcon();
+        });
+    }
+
+    // Country filter saved state
+    const savedCountries = localStorage.getItem("ff-countries");
+    if (savedCountries) {
+        const set = new Set(savedCountries.split(","));
+        countryCbs.forEach(cb => {
+            cb.checked = set.has(cb.value);
+        });
+    }
+    countryCbs.forEach(cb => {
+        cb.addEventListener("change", () => {
+            seenFFIds.clear();
+            refreshEcon();
+        });
+    });
+
+    // Impact filter
+    const savedImp = localStorage.getItem("ff-imp");
+    if (savedImp) {
+        const parts = savedImp.split(",").map(s => s.trim().toLowerCase());
+        impCheckboxes.forEach(cb => {
+            cb.checked = parts.includes(cb.value.toLowerCase());
+        });
+    }
+    impCheckboxes.forEach(cb => {
+        cb.addEventListener("change", () => {
+            seenFFIds.clear();
+            refreshEcon();
+        });
+    });
+
+    // News voice
+    const savedVoice = localStorage.getItem("news-voice");
+    if (savedVoice === "0") {
+        newsSpeechOn = false;
+        if (voiceBtn) {
+            voiceBtn.classList.add("off");
+            voiceBtn.innerText = "News TTS: OFF";
+        }
+    }
+
+    // Initial econ load
+    refreshEcon();
+}
+
+function togNewsVoice() {
+    newsSpeechOn = !newsSpeechOn;
+    const btn = document.getElementById("news-voice-btn");
+    if (btn) {
+        if (newsSpeechOn) {
+            btn.classList.remove("off");
+            btn.innerText = "News TTS: ON";
+        } else {
+            btn.classList.add("off");
+            btn.innerText = "News TTS: OFF";
+        }
+    }
+    localStorage.setItem("news-voice", newsSpeechOn ? "1" : "0");
+}
+
+/* GLOBAL LOGGING */
+window.addEventListener("error", (e) => {
+    console.warn("Global JS error:", e.message);
+});
+window.addEventListener("unhandledrejection", (e) => {
+    console.warn("Unhandled promise rejection:", e.reason);
+});
+
+/* START */
+init();
+</script>
+</body>
+</html>
