@@ -637,7 +637,7 @@ body {
     .ops-card.span-2,
     .ops-card.span-3,
     .ops-card.span-4 { grid-column: span 1; }
-}
+
 
 
 /* TRADING FIRM THEME OVERRIDES */
@@ -839,7 +839,7 @@ input,
     <p>Use the <strong>MUTE</strong> checkbox on each card or the quick mute row to silence audio alerts per timeframe. Grey titles indicate muted timers.</p>
     <p>In <strong>SETTINGS → Visible Timeframes</strong> you can hide/show each timeframe card entirely, or use the presets (Scalping / Swing / All). Each timeframe also has a size slider.</p>
     <h3>3. RTH Session & Alarm</h3>
-    <p>The RTH card counts down until market open, then until close. It will speak when the alert threshold is hit. The 10 AM alarm button plays a short beep at 10:00 AM ET once per day (no TTS).</p>
+    <p>The RTH card counts down until market open, then until close. It will speak when the alert threshold is hit. The 10 AM alarm button plays a short beep at 9:59 AM ET once per day (no TTS).</p>
     <h3>4. News & Economic Calendar</h3>
     <p>Yahoo has its own date and refresh (manual or auto). Economic calendar uses the Forex Factory JSON via your local Node server.</p>
     <p>Impact colors: <span class="ff-badge ff-high">High (Red)</span> <span class="ff-badge ff-medium">Medium (Orange)</span> <span class="ff-badge ff-low">Low (Yellow)</span>.</p>
@@ -1585,7 +1585,7 @@ function check10Alarm(h, m, s) {
     if (!alarm10Enabled) return;
     const today = getTodayNY();
     if (today === alarm10LastDate) return;
-    if (h === 10 && m === 0 && s === 0) {
+    if (h === 9 && m === 59 && s === 0) {
         playBeep();
         alarm10LastDate = today;
         localStorage.setItem("alarm10-last", today);
@@ -1605,7 +1605,7 @@ function playBeep() {
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         const now = audioCtx.currentTime;
-        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.setValueAtTime(0.35, now);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.0);
         osc.start(now);
         osc.stop(now + 1.0);
