@@ -1,22 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
 <title>Candlesticks Dashboard (Audio + Yahoo + FF Econ Calendar)</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap');
+
     :root {
-        --bg: #121212;
-        --card: #1e1e1e;
+        --bg: #0b1119;
+        --card: #121826;
         --alert: #7f1d1d;
-        --text: #ffffff;
-        --dim: #888;
-        --accent: #007bff;
-        --input: #2a2a2a;
-        --border: #333;
-        --green: #28a745;
-        --red: #dc3545;
+        --text: #e5e7eb;
+        --dim: #8b94a7;
+        --accent: #38bdf8;
+        --input: #0f172a;
+        --border: #223049;
+        --green: #22c55e;
+        --red: #ef4444;
+        --gold: #b9c0cf;
+        --cyan: #22d3ee;
+        --ink: #0b1220;
+
+        /* NEW: global widget scales */
+        --timer-scale: 1;
+        --yahoo-scale: 1;
+        --econ-scale: 1;
     }
+
     html { font-size: 16px; }
+
     body {
         background: var(--bg);
         color: var(--text);
@@ -26,7 +38,8 @@
         align-items: center;
         height: 100vh;
         margin: 0;
-        overflow: hidden;
+        /* UPDATED: allow safety scrolling if user scales up */
+        overflow: auto;
         transition: background 0.3s;
     }
 
@@ -105,9 +118,7 @@
         background: rgba(0,0,0,0.25);
         border-bottom: 1px solid #111827;
     }
-    .status-bar span {
-        white-space: nowrap;
-    }
+    .status-bar span { white-space: nowrap; }
     .section-bar {
         width: 100%;
         box-sizing: border-box;
@@ -140,14 +151,8 @@
         min-width: 80px;
         text-align: center;
     }
-    .index-chip.up {
-        border-color: #16a34a;
-        color: #bbf7d0;
-    }
-    .index-chip.down {
-        border-color: #dc2626;
-        color: #fecaca;
-    }
+    .index-chip.up { border-color: #16a34a; color: #bbf7d0; }
+    .index-chip.down { border-color: #dc2626; color: #fecaca; }
 
     /* QUICK MUTE ROW */
     .quick-mute-row {
@@ -178,15 +183,17 @@
     }
     .qm-chip input { width: auto; }
 
-    /* GRID */
+    /* GRID (UPDATED: no forced 50vh crop, supports scaling) */
     .grid-wrapper {
         width: 100%;
-        max-height: 50vh;
-        overflow-y: auto;
+        max-height: none;
+        overflow: visible;
         display: flex;
         justify-content: center;
         padding: 10px 0 10px 0;
         box-sizing: border-box;
+        transform: scale(var(--timer-scale, 1));
+        transform-origin: top center;
     }
     .grid-container {
         display: grid;
@@ -194,6 +201,7 @@
         gap: 15px;
         width: 95%;
         max-width: 1400px;
+        align-items: stretch;
     }
 
     /* CARD */
@@ -207,7 +215,10 @@
         flex-direction: column;
         justify-content: space-between;
         min-height: 10rem;
-        transition: background 0.2s, box-shadow 0.2s, border-color 0.2s;
+        transition: background 0.2s, box-shadow 0.2s, border-color 0.2s, transform 0.15s;
+        transform: scale(var(--card-scale, 1));
+        transform-origin: center;
+        will-change: transform;
     }
     .card.alert {
         background: var(--alert) !important;
@@ -223,10 +234,7 @@
         margin-bottom: 5px;
         letter-spacing: 1px;
     }
-    .c-title.muted {
-        color: #4b5563;
-        opacity: 0.7;
-    }
+    .c-title.muted { color: #4b5563; opacity: 0.7; }
     .c-role {
         font-size: 0.7rem;
         color: #6b7280;
@@ -283,9 +291,7 @@
         color: var(--dim);
         cursor: pointer;
     }
-    .mute-label input {
-        width: auto;
-    }
+    .mute-label input { width: auto; }
 
     /* BUTTON BASE */
     button {
@@ -299,78 +305,79 @@
     }
     button:hover { background: #444; }
 
-    /* OVERLAYS */
+    /* OVERLAYS (UPDATED to match theme vars) */
     .overlay {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0,0,0,0.85);
+        background: rgba(0,0,0,0.78);
         z-index: 1000;
         display: flex;
         justify-content: center;
         align-items: center;
         opacity: 0;
         pointer-events: none;
-        transition: 0.3s;
+        transition: 0.25s;
+        backdrop-filter: blur(6px);
     }
     .overlay.visible {
         opacity: 1;
         pointer-events: all;
     }
     .modal {
-        background: #222;
-        border: 1px solid #444;
-        border-radius: 10px;
-        padding: 30px;
-        max-width: 700px;
-        width: 90%;
-        color: #ddd;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        max-width: 820px;
+        width: min(92vw, 820px);
+        color: var(--text);
+        box-shadow: 0 16px 50px rgba(0,0,0,0.55);
     }
     .modal h2 {
-        border-bottom: 1px solid #444;
+        border-bottom: 1px solid var(--border);
         padding-bottom: 10px;
         margin-top: 0;
         color: var(--accent);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-size: 1rem;
     }
-    .modal h3 {
-        color: #ddd;
-        margin-top: 20px;
-        font-size: 1.1rem;
-    }
-    .modal p, .modal li {
-        color: #aaa;
-        line-height: 1.5;
-        font-size: 0.9rem;
-    }
+    .modal h3, .modal h4 { color: #cbd5e1; }
+    .modal p, .modal li { color: #a1a1aa; line-height: 1.5; font-size: 0.9rem; }
     .close-btn {
         float: right;
         cursor: pointer;
-        font-size: 1.5rem;
-        color: #888;
+        font-size: 1.6rem;
+        color: #94a3b8;
+        line-height: 1;
     }
-    .close-btn:hover { color: white; }
+    .close-btn:hover { color: var(--text); }
 
     /* DESIGN STUDIO */
-    .cf-grp { margin-bottom: 20px; }
+    .cf-grp { margin-bottom: 16px; }
     .cf-grp h4 {
-        margin-bottom: 10px;
-        font-size: 0.8rem;
-        color: #aaa;
+        margin: 0 0 10px 0;
+        font-size: 0.75rem;
+        color: #9ca3af;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 0.14em;
     }
     .cf-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        padding: 10px 10px;
+        border: 1px solid #111827;
+        background: rgba(2,6,23,0.55);
+        border-radius: 10px;
+        gap: 12px;
         margin-bottom: 8px;
-        padding-bottom: 8px;
-        border-bottom: 1px solid #333;
-        gap: 10px;
     }
+    .cf-row span { color: #e5e7eb; font-size: 0.85rem; }
+
     input[type="color"] {
         border: none;
         width: 40px;
@@ -379,7 +386,8 @@
         background: none;
         padding: 0;
     }
-    input[type="range"] { width: 150px; cursor: pointer; }
+    input[type="range"] { width: 220px; cursor: pointer; }
+
     .rst-btn {
         width: 100%;
         background: #d32f2f;
@@ -389,12 +397,13 @@
         border: none;
     }
     .rst-btn:hover { background: #b71c1c; }
-    .theme-select {
-        background: #111827;
-        border-radius: 4px;
-        border: 1px solid #4b5563;
+
+    .theme-select, .news-select {
+        background: #020617;
+        border-radius: 8px;
+        border: 1px solid #334155;
         color: #e5e7eb;
-        padding: 4px 8px;
+        padding: 6px 10px;
         font-size: 0.8rem;
         font-family: inherit;
     }
@@ -405,7 +414,7 @@
         box-sizing: border-box;
         padding: 5px 20px 15px 20px;
         overflow-y: auto;
-        flex: 1 0 auto;
+        flex: 1 1 auto;
         border-top: 1px solid var(--border);
         background: radial-gradient(circle at top, rgba(255,255,255,0.02), transparent 55%);
     }
@@ -417,7 +426,12 @@
         max-width: 1400px;
         margin: 0 auto 8px auto;
         box-shadow: 0 8px 25px rgba(0,0,0,0.35);
+        overflow: visible;
     }
+    /* NEW: scale each panel separately */
+    .news-container[data-panel="yahoo"] { transform: scale(var(--yahoo-scale, 1)); transform-origin: top center; }
+    .news-container[data-panel="econ"]  { transform: scale(var(--econ-scale, 1));  transform-origin: top center; }
+
     .news-header {
         display: flex;
         justify-content: space-between;
@@ -443,29 +457,20 @@
         align-items: center;
         flex-wrap: wrap;
     }
-    .news-select {
-        background: #222;
-        border: 1px solid #555;
-        color: #ddd;
-        border-radius: 4px;
-        padding: 3px 6px;
-        font-size: 0.75rem;
-        font-family: inherit;
-    }
     .news-voice-btn {
         border-color: var(--accent);
         font-size: 0.75rem;
         padding: 4px 8px;
     }
-    .news-voice-btn.off {
-        border-color: #555;
-        color: #aaa;
+    .news-voice-btn.off { border-color: #555; color: #aaa; }
+    .news-refresh { font-size: 0.8rem; padding: 4px 8px; border-radius: 4px; }
+    .refresh-state {
+        font-size: 0.7rem;
+        color: var(--dim);
+        padding-left: 6px;
     }
-    .news-refresh {
-        font-size: 0.8rem;
-        padding: 4px 8px;
-        border-radius: 4px;
-    }
+    .refresh-state.active { color: #93c5fd; }
+
     .news-list {
         max-height: 32vh;
         overflow-y: auto;
@@ -477,46 +482,18 @@
         font-size: 0.8rem;
         transition: background 0.15s;
     }
-    .news-list .news-item:nth-child(odd) {
-        background: rgba(255,255,255,0.01);
-    }
+    .news-list .news-item:nth-child(odd) { background: rgba(255,255,255,0.01); }
     .news-item:last-child { border-bottom: none; }
-    .news-item strong {
-        color: #8fc0ff;
-        margin-right: 4px;
-    }
-    .news-item a {
-        color: #9cf;
-        text-decoration: none;
-    }
+    .news-item strong { color: #8fc0ff; margin-right: 4px; }
+    .news-item a { color: #9cf; text-decoration: none; }
     .news-item a:hover { text-decoration: underline; }
-    .news-item:hover {
-        background: rgba(148,163,184,0.18);
-    }
-    .news-time {
-        color: var(--dim);
-        font-size: 0.75rem;
-        margin-right: 6px;
-        font-weight: 600;
-    }
+    .news-item:hover { background: rgba(148,163,184,0.18); }
+    .news-time { color: var(--dim); font-size: 0.75rem; margin-right: 6px; font-weight: 600; }
 
     /* ECON CALENDAR */
-    .ff-label {
-        color: #93c5fd;
-        font-weight: 600;
-        margin-right: 4px;
-    }
-    .ff-time {
-        font-size: 0.75rem;
-        color: var(--dim);
-        margin-right: 6px;
-        font-weight: 600;
-    }
-    .ff-cur {
-        font-size: 0.75rem;
-        color: #a5b4fc;
-        margin-right: 6px;
-    }
+    .ff-label { color: #93c5fd; font-weight: 600; margin-right: 4px; }
+    .ff-time { font-size: 0.75rem; color: var(--dim); margin-right: 6px; font-weight: 600; }
+    .ff-cur { font-size: 0.75rem; color: #a5b4fc; margin-right: 6px; }
     .ff-badge {
         display: inline-block;
         padding: 2px 7px;
@@ -525,18 +502,10 @@
         margin-right: 6px;
         font-weight: 600;
     }
-    .ff-high {
-        background: #991b1b;
-        color: #fee2e2;
-    }
-    .ff-medium {
-        background: #9a3412;
-        color: #ffedd5;
-    }
-    .ff-low {
-        background: #854d0e;
-        color: #fef3c7;
-    }
+    .ff-high { background: #7f1d1d; color: #fecaca; }
+    .ff-medium { background: #7c2d12; color: #fed7aa; }
+    .ff-low { background: #1f2937; color: #cbd5f5; border: 1px solid #334155; }
+
     .ff-filter-row {
         display: flex;
         flex-wrap: wrap;
@@ -552,9 +521,7 @@
         gap: 3px;
         cursor: pointer;
     }
-    .ff-filter-row input[type="checkbox"] {
-        width: auto;
-    }
+    .ff-filter-row input[type="checkbox"] { width: auto; }
     .econ-controls {
         display: flex;
         flex-wrap: wrap;
@@ -565,9 +532,7 @@
         color: var(--dim);
     }
 
-    .news-item.ff-past {
-        opacity: 0.45;
-    }
+    .news-item.ff-past { opacity: 0.45; }
     .news-item.ff-soon {
         background: rgba(239, 68, 68, 0.12) !important;
         border-radius: 4px;
@@ -605,15 +570,151 @@
     }
 
     @media (max-width: 1100px) {
-        .grid-container {
-            grid-template-columns: repeat(3, 1fr);
-        }
+        .grid-container { grid-template-columns: repeat(3, 1fr); }
     }
     @media (max-width: 800px) {
-        .grid-container {
-            grid-template-columns: repeat(2, 1fr);
-        }
+        .grid-container { grid-template-columns: repeat(2, 1fr); }
     }
+
+body {
+    font-family: 'IBM Plex Mono', monospace;
+    background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(56,189,248,0.08), transparent 55%),
+        radial-gradient(900px 500px at 90% -20%, rgba(245,158,11,0.06), transparent 60%),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 110px),
+        var(--bg);
+}
+
+.top-bar {
+    background: linear-gradient(180deg, rgba(8,12,20,0.98), rgba(8,12,20,0.75));
+    border-bottom: 1px solid #1f2a40;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+}
+.header-btn {
+    border-color: #1f2a40;
+    color: #cbd5f5;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.help-btn {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.section-bar {
+    font-family: 'Space Grotesk', sans-serif;
+    letter-spacing: 0.28em;
+    color: #8b94a7;
+}
+
+.card {
+    background: linear-gradient(180deg, #111827 0%, #0b1220 100%);
+    border-color: #1f2a40;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02), 0 10px 30px rgba(0,0,0,0.35);
+}
+
+.news-container {
+    background: linear-gradient(180deg, #0f172a 0%, #0b1220 100%);
+    border-color: #223049;
+}
+.news-title {
+    font-family: 'Space Grotesk', sans-serif;
+    letter-spacing: 0.18em;
+    color: #cbd5f5;
+}
+
+.c-title,
+.c-role {
+    font-family: 'Space Grotesk', sans-serif;
+    letter-spacing: 0.18em;
+}
+
+.index-chip {
+    background: #0b1220;
+    border-color: #223049;
+}
+
+    .ops-card.span-2,
+    .ops-card.span-3,
+    .ops-card.span-4 { grid-column: span 1; }
+}
+
+
+/* TRADING FIRM THEME OVERRIDES */
+:root {
+    --bg: #0a0f1a;
+    --card: #0f1624;
+    --alert: #7f1d1d;
+    --text: #e6edf7;
+    --dim: #9aa7bd;
+    --accent: #5aa7ff;
+    --input: #0b1220;
+    --border: #1c2a3f;
+    --green: #22c55e;
+    --red: #ef4444;
+}
+
+body {
+    background:
+        radial-gradient(900px 500px at 10% -10%, rgba(90,167,255,0.12), transparent 55%),
+        radial-gradient(900px 500px at 90% -20%, rgba(34,197,94,0.08), transparent 60%),
+        linear-gradient(180deg, #0a0f1a 0%, #0b1220 50%, #0a0f1a 100%);
+}
+
+.top-bar {
+    background: linear-gradient(180deg, rgba(10,15,26,0.98), rgba(10,15,26,0.8));
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.4);
+}
+
+.section-bar {
+    color: #9aa7bd;
+    letter-spacing: 0.22em;
+}
+
+.card {
+    background: linear-gradient(180deg, #0f1624 0%, #0c1422 100%);
+    border-color: var(--border);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02), 0 8px 22px rgba(0,0,0,0.35);
+}
+
+.news-container {
+    background: linear-gradient(180deg, #0f1624 0%, #0c1422 100%);
+    border-color: var(--border);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02), 0 8px 22px rgba(0,0,0,0.35);
+}
+
+.index-chip {
+    background: #0b1220;
+    border-color: var(--border);
+}
+
+.header-btn,
+button {
+    background: #0b1220;
+    border-color: #23324a;
+    color: #e6edf7;
+}
+.header-btn:hover,
+button:hover { background: #121a2a; }
+
+input,
+.theme-select,
+.news-select {
+    background: #0b1220;
+    border-color: #223049;
+    color: var(--text);
+}
+
+.news-title {
+    color: #c9d6f3;
+    letter-spacing: 0.16em;
+}
+
+.news-item strong { color: #7fb3ff; }
+
+.ff-low { background: #a16207; color: #fff3c4; border: 1px solid #ca8a04; }
+
 </style>
 </head>
 <body>
@@ -642,6 +743,29 @@
         <div class="cf-row">
             <span>Global Text Size</span>
             <input type="range" min="12" max="24" value="16" oninput="upTh('size',this.value)">
+        </div>
+    </div>
+
+    <!-- NEW: WIDGET SIZES -->
+    <div class="cf-grp">
+        <h4>Widget Sizes</h4>
+
+        <div class="cf-row">
+            <span>Timers Scale</span>
+            <input id="timer-scale" type="range" min="0.85" max="1.35" step="0.01"
+                   oninput="setScale('--timer-scale', this.value, 'timer-scale')">
+        </div>
+
+        <div class="cf-row">
+            <span>Yahoo Panel Scale</span>
+            <input id="yahoo-scale" type="range" min="0.85" max="1.25" step="0.01"
+                   oninput="setScale('--yahoo-scale', this.value, 'yahoo-scale')">
+        </div>
+
+        <div class="cf-row">
+            <span>Econ Panel Scale</span>
+            <input id="econ-scale" type="range" min="0.85" max="1.25" step="0.01"
+                   oninput="setScale('--econ-scale', this.value, 'econ-scale')">
         </div>
     </div>
 
@@ -690,7 +814,7 @@
     <!-- Visible timeframes -->
     <div class="cf-grp">
         <h4>Visible Timeframes</h4>
-        <div id="tf-list" style="max-height:200px;overflow-y:auto;font-size:0.8rem;"></div>
+        <div id="tf-list" style="max-height:260px;overflow-y:auto;font-size:0.8rem;"></div>
         <div style="margin-top:8px;font-size:0.7rem;color:#9ca3af;">
             Presets:
             <button onclick="applyLayoutPreset('scalp')" style="font-size:0.7rem;">Scalping</button>
@@ -713,7 +837,7 @@
     <p><strong>ALERT AT</strong> is the number of seconds (or HH:MM:SS) before close where the card turns red and (if not muted) the system speaks an alert.</p>
     <h3>2. Mute & Visibility</h3>
     <p>Use the <strong>MUTE</strong> checkbox on each card or the quick mute row to silence audio alerts per timeframe. Grey titles indicate muted timers.</p>
-    <p>In <strong>SETTINGS → Visible Timeframes</strong> you can hide/show each timeframe card entirely, or use the presets (Scalping / Swing / All).</p>
+    <p>In <strong>SETTINGS → Visible Timeframes</strong> you can hide/show each timeframe card entirely, or use the presets (Scalping / Swing / All). Each timeframe also has a size slider.</p>
     <h3>3. RTH Session & Alarm</h3>
     <p>The RTH card counts down until market open, then until close. It will speak when the alert threshold is hit. The 10 AM alarm button plays a short beep at 10:00 AM ET once per day (no TTS).</p>
     <h3>4. News & Economic Calendar</h3>
@@ -764,9 +888,7 @@
 </div>
 
 <!-- SECTION BAR -->
-<div class="section-bar">
-    TIMERS · SESSION
-</div>
+<div class="section-bar">TIMERS · SESSION</div>
 
 <!-- INDEX ROW -->
 <div class="index-row">
@@ -783,10 +905,11 @@
     <div class="grid-container" id="grid"></div>
 </div>
 
+
 <!-- NEWS AREA (YAHOO + ECON CALENDAR) -->
 <div class="news-wrapper">
     <!-- Yahoo Finance -->
-    <div class="news-container">
+    <div class="news-container" data-panel="yahoo">
         <div class="news-header">
             <div class="news-title">📰 Market News Feed (Yahoo Finance)</div>
             <div class="news-controls">
@@ -794,13 +917,14 @@
                 <input type="date" id="news-date" class="news-select">
                 <button class="news-refresh" onclick="refreshNews()">REFRESH NEWS</button>
                 <button id="news-voice-btn" class="news-voice-btn" onclick="togNewsVoice()">News TTS: ON</button>
+                <span id="yahoo-refresh-state" class="refresh-state"></span>
             </div>
         </div>
         <div id="news-list" class="news-list">Loading…</div>
     </div>
 
     <!-- Economic Calendar (Forex Factory via backend) -->
-    <div class="news-container">
+    <div class="news-container" data-panel="econ">
         <div class="news-header">
             <div class="news-title">📅 Economic Calendar (Forex Factory)</div>
             <div class="econ-controls">
@@ -864,6 +988,8 @@ let visibleTimeframes = [];
 /* NEWS STATE */
 const seenNewsIds = new Set();   // Yahoo
 const seenFFIds = new Set();     // Econ calendar
+let yahooLastHtml = "";
+let yahooLastUpdated = "";
 
 /* Auto-refresh state */
 let newsRefreshMs = 0;
@@ -886,12 +1012,16 @@ let audioCtx = null;
 /* Yahoo RSS via AllOrigins */
 const YF_RSS = "https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EGSPC&region=US&lang=en-US";
 const YF_FEED_BASE = "https://api.allorigins.win/raw?url=";
+const YF_RSS_API = "http://localhost:3000/api/yahoo-rss";
 
 /* ECON BACKEND (Forex Factory proxy) */
 const ECON_API_BASE = "http://localhost:3000/api/ff-calendar";
+const FF_DIRECT_BASE = "https://nfs.faireconomy.media/ff_calendar_";
+const FF_CACHE_TTL_MS = 10 * 60 * 1000;
+const ffWeekCache = new Map();
 
 /* Index quotes via Yahoo JSON */
-const INDEX_URL = YF_FEED_BASE + encodeURIComponent("https://query1.finance.yahoo.com/v7/finance/quote?symbols=SPY,QQQ,^VIX");
+const INDEX_YAHOO_URL = "https://query1.finance.yahoo.com/v7/finance/quote?symbols=SPY,QQQ,^VIX";
 let indexTimer = null;
 
 /* INIT */
@@ -900,12 +1030,36 @@ function init() {
     renderTimerGrid();
     buildTimeframeSettingsUI();
     loadTh();
+    loadScales();      // NEW
     initIndex();
     initNotes();
     initNewsControls();
     initAlarmButton();
     loop();
     refreshNews(); // initial Yahoo
+}
+
+/* --- NEW: SCALE SYSTEM (GLOBAL WIDGET SCALE) --- */
+function setScale(cssVar, value, storageKey) {
+    const v = Math.max(0.5, Math.min(2, parseFloat(value) || 1));
+    document.documentElement.style.setProperty(cssVar, String(v));
+    localStorage.setItem(storageKey, String(v));
+}
+function loadScales() {
+    const timer = parseFloat(localStorage.getItem("timer-scale") || "1");
+    const yahoo = parseFloat(localStorage.getItem("yahoo-scale") || "1");
+    const econ  = parseFloat(localStorage.getItem("econ-scale")  || "1");
+
+    document.documentElement.style.setProperty("--timer-scale", String(timer));
+    document.documentElement.style.setProperty("--yahoo-scale", String(yahoo));
+    document.documentElement.style.setProperty("--econ-scale",  String(econ));
+
+    const t = document.getElementById("timer-scale");
+    const y = document.getElementById("yahoo-scale");
+    const e = document.getElementById("econ-scale");
+    if (t) t.value = String(timer);
+    if (y) y.value = String(yahoo);
+    if (e) e.value = String(econ);
 }
 
 /* Theme functions */
@@ -928,9 +1082,7 @@ function applyTheme(themeKey, save = true) {
     const sel = document.getElementById('theme-select');
     if (sel) sel.value = themeKey;
 
-    if (save) {
-        localStorage.setItem('theme', themeKey);
-    }
+    if (save) localStorage.setItem('theme', themeKey);
 }
 
 /* Visible timeframes state */
@@ -959,6 +1111,10 @@ function renderTimerGrid() {
 
         const savedWarn = localStorage.getItem('w-'+i) || c.warn;
         const savedMute = localStorage.getItem('mute-'+i) === '1';
+
+        /* NEW: per-card scale */
+        const tfScale = parseFloat(localStorage.getItem("tf-scale-" + i) || "1");
+
         let timeHTML =
             c.seconds === 60
               ? '<span id="t-'+i+'" class="c-time">00</span><span id="m-'+i+'" class="c-ms">.00</span>'
@@ -978,7 +1134,7 @@ function renderTimerGrid() {
         const roleHTML = '<div class="c-role">'+(c.role || '')+'</div>';
 
         html +=
-          '<div class="card" id="c-'+i+'">' +
+          '<div class="card" id="c-'+i+'" style="--card-scale:'+tfScale+';">' +
             '<div>' +
               '<div class="c-title" id="title-'+i+'">'+c.label+'</div>' +
               roleHTML +
@@ -1021,27 +1177,57 @@ function rebuildGrid() {
     renderTimerGrid();
 }
 
-/* Build timeframe settings UI */
+/* Build timeframe settings UI (UPDATED: includes per-card size sliders) */
 function buildTimeframeSettingsUI() {
     const cont = document.getElementById("tf-list");
     if (!cont) return;
+
     let inner = "";
     config.forEach((c, i) => {
         const checked = visibleTimeframes[i] !== false;
+        const sc = parseFloat(localStorage.getItem("tf-scale-" + i) || "1");
+
         inner += `
-            <label style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-                <input type="checkbox" class="tf-toggle" data-idx="${i}" ${checked ? "checked" : ""}>
-                <span>${c.label}</span>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:8px;border:1px solid #111827;background:rgba(2,6,23,0.45);border-radius:10px;">
+            <label style="display:flex;align-items:center;gap:8px;min-width:140px;">
+              <input type="checkbox" class="tf-toggle" data-idx="${i}" ${checked ? "checked" : ""}>
+              <span style="font-size:0.85rem;color:#e5e7eb;">${c.label}</span>
             </label>
+
+            <div style="display:flex;align-items:center;gap:10px;flex:1;">
+              <span style="font-size:0.75rem;color:#94a3b8;min-width:70px;">Size</span>
+              <input type="range" class="tf-scale" data-idx="${i}"
+                     min="0.85" max="1.35" step="0.01" value="${sc}">
+              <span style="font-size:0.75rem;color:#94a3b8;width:48px;text-align:right;">${Math.round(sc*100)}%</span>
+            </div>
+          </div>
         `;
     });
+
     cont.innerHTML = inner;
+
     Array.from(cont.querySelectorAll(".tf-toggle")).forEach(cb => {
         cb.addEventListener("change", () => {
             const idx = parseInt(cb.getAttribute("data-idx"), 10);
             visibleTimeframes[idx] = cb.checked;
             saveVisibleTimeframes();
             rebuildGrid();
+            buildTimeframeSettingsUI();
+        });
+    });
+
+    Array.from(cont.querySelectorAll(".tf-scale")).forEach(sl => {
+        sl.addEventListener("input", () => {
+            const idx = parseInt(sl.getAttribute("data-idx"), 10);
+            const v = parseFloat(sl.value);
+
+            localStorage.setItem("tf-scale-" + idx, String(v));
+
+            const pct = sl.parentElement.querySelector("span:last-child");
+            if (pct) pct.textContent = `${Math.round(v*100)}%`;
+
+            const card = document.getElementById("c-" + idx);
+            if (card) card.style.setProperty("--card-scale", v);
         });
     });
 }
@@ -1164,11 +1350,8 @@ function loop() {
             const wEl = document.getElementById('w-'+i);
             const thresh = parseTime(wEl ? wEl.value : c.warn);
 
-            if (secRem <= thresh) {
-                cardEl.classList.add("alert");
-            } else {
-                cardEl.classList.remove("alert");
-            }
+            if (secRem <= thresh) cardEl.classList.add("alert");
+            else cardEl.classList.remove("alert");
 
             const muteEl = document.getElementById('mu-'+i);
             const isMuted = muteEl ? muteEl.checked : false;
@@ -1223,11 +1406,8 @@ function loop() {
                 srthEl.innerText = "MARKET OPEN";
                 phase = "RTH";
 
-                if (diff <= rthThresh) {
-                    rCardEl.classList.add("alert");
-                } else {
-                    rCardEl.classList.remove("alert");
-                }
+                if (diff <= rthThresh) rCardEl.classList.add("alert");
+                else rCardEl.classList.remove("alert");
 
                 if (diff === rthThresh && lastSpeak['rth'] !== diff) {
                     speak("Session closing in " + rthThresh + " seconds");
@@ -1354,11 +1534,8 @@ function loadTh() {
     });
 
     const sz = localStorage.getItem('sz');
-    if (sz) {
-        document.documentElement.style.fontSize = sz + "px";
-    }
+    if (sz) document.documentElement.style.fontSize = sz + "px";
 
-    // Bind theme select
     const sel = document.getElementById('theme-select');
     if (sel && !sel.dataset.bound) {
         sel.dataset.bound = '1';
@@ -1437,32 +1614,56 @@ function playBeep() {
     }
 }
 
+function setYahooRefreshState(text, active) {
+    const el = document.getElementById("yahoo-refresh-state");
+    if (!el) return;
+    el.innerText = text || "";
+    el.classList.toggle("active", !!active);
+}
+
 /* ---------------------- NEWS: YAHOO ---------------------- */
 function refreshYahoo() {
     const dateInput = document.getElementById("news-date");
-    const selectedDate = dateInput && dateInput.value ? dateInput.value : getTodayNY();
-    const url = YF_FEED_BASE + encodeURIComponent(YF_RSS);
+    const selectedDate = dateInput && dateInput.value ? dateInput.value : "";
+    const url = YF_RSS_API;
+
+    const listEl = document.getElementById("news-list");
+    const prevScroll = listEl ? listEl.scrollTop : 0;
+    setYahooRefreshState("Refreshing...", true);
 
     fetch(url)
-        .then(r => r.text())
+        .then(r => {
+            if (!r.ok) throw new Error("Yahoo RSS backend error");
+            return r.text();
+        })
+        .catch(() => {
+            const fallbackUrl = YF_FEED_BASE + encodeURIComponent(YF_RSS);
+            return fetch(fallbackUrl).then(r => r.text());
+        })
         .then(str => {
             let doc;
             try {
                 doc = new window.DOMParser().parseFromString(str, "text/xml");
             } catch (e) {
                 console.warn("DOMParser error on Yahoo feed:", e);
-                document.getElementById("news-list").innerText = "Could not parse news.";
+                if (listEl && yahooLastHtml) {
+                    listEl.innerHTML = yahooLastHtml;
+                } else if (listEl) {
+                    listEl.innerText = "Could not parse news.";
+                }
+                setYahooRefreshState("Refresh failed", false);
                 return;
             }
 
-            const items = Array.from(doc.querySelectorAll("item")).slice(0, 40);
-            const listEl = document.getElementById("news-list");
+            const items = Array.from(doc.querySelectorAll("item"));
             if (!listEl) return;
 
             let html = "";
             let firstNewTitle = null;
+            let shown = 0;
 
             items.forEach(it => {
+                if (shown >= 5) return;
                 const guid = it.querySelector("guid")?.textContent ||
                              it.querySelector("link")?.textContent ||
                              it.querySelector("title")?.textContent || "";
@@ -1499,9 +1700,27 @@ function refreshYahoo() {
                             '<strong>Yahoo Finance:</strong>' +
                             '<a href="'+link+'" target="_blank" rel="noopener noreferrer">'+title+'</a>' +
                         '</div>';
+                shown += 1;
             });
 
-            listEl.innerHTML = html || "No headlines for selected date.";
+            if (html) {
+                listEl.innerHTML = html;
+                yahooLastHtml = html;
+            } else if (!yahooLastHtml) {
+                listEl.innerText = "No headlines available.";
+            }
+
+            if (listEl) {
+                listEl.scrollTop = Math.min(prevScroll, listEl.scrollHeight);
+            }
+
+            const now = new Date();
+            yahooLastUpdated = now.toLocaleTimeString("en-US", {
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true
+            });
+            setYahooRefreshState("Updated " + yahooLastUpdated, false);
 
             if (firstNewTitle && audioOn && newsSpeechOn) {
                 speak("Yahoo Finance: " + firstNewTitle);
@@ -1509,8 +1728,12 @@ function refreshYahoo() {
         })
         .catch(err => {
             console.warn("Yahoo Finance feed error:", err);
-            const listEl = document.getElementById("news-list");
-            if (listEl) listEl.innerText = "Could not load news.";
+            if (listEl && yahooLastHtml) {
+                listEl.innerHTML = yahooLastHtml;
+            } else if (listEl) {
+                listEl.innerText = "Could not load news.";
+            }
+            setYahooRefreshState("Refresh failed", false);
         });
 }
 
@@ -1524,7 +1747,196 @@ function impactToLevel(impact) {
     return "low";
 }
 
-function refreshEcon() {
+function dayDiff(a, b) {
+    const da = new Date(`${a}T00:00:00`);
+    const db = new Date(`${b}T00:00:00`);
+    const msPerDay = 24 * 60 * 60 * 1000;
+    return Math.round((da - db) / msPerDay);
+}
+
+async function fetchFFWeekData(suffix) {
+    const cached = ffWeekCache.get(suffix);
+    const now = Date.now();
+    if (cached && (now - cached.fetchedAt) < FF_CACHE_TTL_MS) {
+        return cached.data;
+    }
+
+    const url = FF_DIRECT_BASE + suffix + ".json";
+    let data = [];
+
+    try {
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error("FF direct fetch failed");
+        data = await resp.json();
+    } catch (err) {
+        const proxyUrl = YF_FEED_BASE + encodeURIComponent(url);
+        const resp = await fetch(proxyUrl);
+        if (!resp.ok) throw new Error("FF proxy fetch failed");
+        data = await resp.json();
+    }
+
+    const arr = Array.isArray(data) ? data : [];
+    ffWeekCache.set(suffix, { data: arr, fetchedAt: now });
+    return arr;
+}
+
+async function fetchEconFallback(selectedDate, countriesVal, impParam) {
+    const todayStr = getTodayNY();
+    const diffFromToday = dayDiff(selectedDate, todayStr);
+    const candidates = ["thisweek"];
+
+    if (diffFromToday < 0 && diffFromToday >= -7) {
+        candidates.push("lastweek");
+    } else if (diffFromToday > 0 && diffFromToday <= 7) {
+        candidates.push("nextweek");
+    }
+
+    let dataForDate = [];
+
+    for (const suffix of candidates) {
+        const weekData = await fetchFFWeekData(suffix);
+        const subset = weekData.filter(ev => {
+            if (!ev.date) return false;
+            return ev.date.slice(0, 10) === selectedDate;
+        });
+        if (subset.length > 0) {
+            dataForDate = subset;
+            break;
+        }
+    }
+
+    const countries = (countriesVal || "")
+        .split(",")
+        .map(s => s.trim().toUpperCase())
+        .filter(Boolean);
+    if (countries.length) {
+        dataForDate = dataForDate.filter(ev =>
+            ev.country && countries.includes(ev.country.toUpperCase())
+        );
+    }
+
+    const impacts = (impParam || "")
+        .split(",")
+        .map(s => s.trim().toLowerCase())
+        .filter(Boolean);
+    if (impacts.length) {
+        dataForDate = dataForDate.filter(ev =>
+            ev.impact && impacts.includes(ev.impact.toLowerCase())
+        );
+    }
+
+    dataForDate.sort((a, b) => new Date(a.date) - new Date(b.date));
+    return dataForDate;
+}
+
+function renderEconData(data) {
+    if (!Array.isArray(data)) data = [];
+    const el = document.getElementById("ff-list");
+    if (!el) return;
+
+    let html = "";
+    let firstNew = null;
+    const now = new Date();
+    let nextUpcoming = null;
+    let nextDiff = Infinity;
+
+    data.forEach(ev => {
+        try {
+            const id = (ev.country || "") + "|" + (ev.title || "") + "|" + (ev.date || "");
+            if (!seenFFIds.has(id)) {
+                seenFFIds.add(id);
+                if (!firstNew) firstNew = ev;
+            }
+
+            const level = impactToLevel(ev.impact);
+            const when = ev.date ? new Date(ev.date) : null;
+            const timeLabel = when
+                ? when.toLocaleTimeString("en-US", {
+                      timeZone: "America/New_York",
+                      hour: "numeric",
+                      minute: "2-digit",
+                      hour12: true
+                  })
+                : "";
+
+            const minsDiff = when ? (when - now) / 60000 : 9999;
+            let extraClass = "";
+            if (minsDiff < 0) extraClass = " ff-past";
+            else if (minsDiff <= 30) extraClass = " ff-soon";
+
+            if (minsDiff >= 0 && minsDiff < nextDiff) {
+                nextDiff = minsDiff;
+                nextUpcoming = { ev, timeLabel, level };
+            }
+
+            const country = ev.country || "";
+            const title = ev.title || "Event";
+
+            const niceImpact =
+                level === "high" ? "High" :
+                level === "medium" ? "Medium" : "Low";
+
+            html +=
+                '<div class="news-item'+extraClass+'">' +
+                    (timeLabel ? '<span class="ff-time">'+timeLabel+'</span>' : '') +
+                    (country ? '<span class="ff-cur">['+country+']</span>' : '') +
+                    '<span class="ff-badge ff-'+level+'">'+niceImpact+'</span>' +
+                    '<span class="ff-label">Economic:</span>' +
+                    '<span>'+title+'</span>' +
+                '</div>';
+        } catch (e) {
+            console.warn("Error mapping econ event:", e);
+        }
+    });
+
+    el.innerHTML = html || "No events found for selected filters.";
+
+    const nextEl2 = document.getElementById("ff-next");
+    if (nextEl2) {
+        if (nextUpcoming) {
+            const ev = nextUpcoming.ev;
+            const level = nextUpcoming.level;
+            const timeLabel = nextUpcoming.timeLabel;
+            const what =
+                level === "high" ? "High impact" :
+                level === "medium" ? "Medium impact" : "Low impact";
+            const country = ev.country || "";
+            const title = ev.title || "event";
+            const mins = Math.round(nextDiff);
+            const minsText = mins <= 1 ? "now" : `in ${mins} min`;
+            nextEl2.innerText =
+                `Next ${what} event: ${timeLabel} ${country ? "["+country+"] " : ""}${title} (${minsText})`;
+        } else {
+            nextEl2.innerText = "No upcoming events for the rest of the selected day.";
+        }
+    }
+
+    if (firstNew && audioOn && newsSpeechOn) {
+        const level = impactToLevel(firstNew.impact);
+        const when = firstNew.date ? new Date(firstNew.date) : null;
+        const timeLabel = when
+            ? when.toLocaleTimeString("en-US", {
+                  timeZone: "America/New_York",
+                  hour: "numeric",
+                  minute: "2-digit",
+                  hour12: true
+              })
+            : "";
+        const country = firstNew.country || "";
+        const title = firstNew.title || "event";
+
+        const what =
+            level === "high" ? "High impact" :
+            level === "medium" ? "Medium impact" : "Low impact";
+
+        const tPart = timeLabel ? " at " + timeLabel : "";
+        const cPart = country ? " in " + country : "";
+
+        speak("Economic calendar " + what + " event" + tPart + cPart + ": " + title);
+    }
+}
+
+async function refreshEcon() {
     const econDateInput = document.getElementById("econ-date");
     const selectedDate = econDateInput && econDateInput.value ? econDateInput.value : getTodayNY();
 
@@ -1556,121 +1968,24 @@ function refreshEcon() {
         (countriesVal ? `&countries=${encodeURIComponent(countriesVal)}` : "") +
         (impParam ? `&imp=${encodeURIComponent(impParam)}` : "");
 
-    fetch(url)
-        .then(r => r.json())
-        .then(data => {
-            if (!Array.isArray(data)) data = [];
-            const el = document.getElementById("ff-list");
-            if (!el) return;
-
-            let html = "";
-            let firstNew = null;
-            const now = new Date();
-            let nextUpcoming = null;
-            let nextDiff = Infinity;
-
-            data.forEach(ev => {
-                try {
-                    const id = (ev.country || "") + "|" + (ev.title || "") + "|" + (ev.date || "");
-                    if (!seenFFIds.has(id)) {
-                        seenFFIds.add(id);
-                        if (!firstNew) firstNew = ev;
-                    }
-
-                    const level = impactToLevel(ev.impact);
-                    const when = ev.date ? new Date(ev.date) : null;
-                    const timeLabel = when
-                        ? when.toLocaleTimeString("en-US", {
-                              timeZone: "America/New_York",
-                              hour: "numeric",
-                              minute: "2-digit",
-                              hour12: true
-                          })
-                        : "";
-
-                    const minsDiff = when ? (when - now) / 60000 : 9999;
-                    let extraClass = "";
-                    if (minsDiff < 0) extraClass = " ff-past";
-                    else if (minsDiff <= 30) extraClass = " ff-soon";
-
-                    if (minsDiff >= 0 && minsDiff < nextDiff) {
-                        nextDiff = minsDiff;
-                        nextUpcoming = { ev, timeLabel, level };
-                    }
-
-                    const country = ev.country || "";
-                    const title = ev.title || "Event";
-
-                    const niceImpact =
-                        level === "high" ? "High" :
-                        level === "medium" ? "Medium" : "Low";
-
-                    html +=
-                        '<div class="news-item'+extraClass+'">' +
-                            (timeLabel ? '<span class="ff-time">'+timeLabel+'</span>' : '') +
-                            (country ? '<span class="ff-cur">['+country+']</span>' : '') +
-                            '<span class="ff-badge ff-'+level+'">'+niceImpact+'</span>' +
-                            '<span class="ff-label">Economic:</span>' +
-                            '<span>'+title+'</span>' +
-                        '</div>';
-                } catch (e) {
-                    console.warn("Error mapping econ event:", e);
-                }
-            });
-
-            el.innerHTML = html || "No events found for selected filters.";
-
-            const nextEl2 = document.getElementById("ff-next");
-            if (nextEl2) {
-                if (nextUpcoming) {
-                    const ev = nextUpcoming.ev;
-                    const level = nextUpcoming.level;
-                    const timeLabel = nextUpcoming.timeLabel;
-                    const what =
-                        level === "high" ? "High impact" :
-                        level === "medium" ? "Medium impact" : "Low impact";
-                    const country = ev.country || "";
-                    const title = ev.title || "event";
-                    const mins = Math.round(nextDiff);
-                    const minsText = mins <= 1 ? "now" : `in ${mins} min`;
-                    nextEl2.innerText =
-                        `Next ${what} event: ${timeLabel} ${country ? "["+country+"] " : ""}${title} (${minsText})`;
-                } else {
-                    nextEl2.innerText = "No upcoming events for the rest of the selected day.";
-                }
-            }
-
-            if (firstNew && audioOn && newsSpeechOn) {
-                const level = impactToLevel(firstNew.impact);
-                const when = firstNew.date ? new Date(firstNew.date) : null;
-                const timeLabel = when
-                    ? when.toLocaleTimeString("en-US", {
-                          timeZone: "America/New_York",
-                          hour: "numeric",
-                          minute: "2-digit",
-                          hour12: true
-                      })
-                    : "";
-                const country = firstNew.country || "";
-                const title = firstNew.title || "event";
-
-                const what =
-                    level === "high" ? "High impact" :
-                    level === "medium" ? "Medium impact" : "Low impact";
-
-                const tPart = timeLabel ? " at " + timeLabel : "";
-                const cPart = country ? " in " + country : "";
-
-                speak("Economic calendar " + what + " event" + tPart + cPart + ": " + title);
-            }
-        })
-        .catch(err => {
-            console.warn("Econ calendar fetch error:", err);
+    try {
+        const r = await fetch(url);
+        if (!r.ok) throw new Error("Backend error");
+        const data = await r.json();
+        renderEconData(data);
+    } catch (err) {
+        console.warn("Econ calendar fetch error:", err);
+        try {
+            const fallbackData = await fetchEconFallback(selectedDate, countriesVal, impParam);
+            renderEconData(fallbackData);
+        } catch (fallbackErr) {
+            console.warn("Econ calendar fallback error:", fallbackErr);
             const el = document.getElementById("ff-list");
             if (el) el.innerText = "Could not load economic calendar.";
             const nextEl2 = document.getElementById("ff-next");
             if (nextEl2) nextEl2.innerText = "Backend offline or unreachable.";
-        });
+        }
+    }
 }
 
 /* Combined manual refresh for Yahoo */
@@ -1689,9 +2004,7 @@ function setNewsAutoRefresh(ms) {
     statusNews = newsRefreshMs ? `Auto ${Math.round(newsRefreshMs/60000)}m` : "Manual";
     updateStatusBar();
     const sel = document.getElementById("news-refresh-select");
-    if (sel && String(newsRefreshMs) !== sel.value) {
-        sel.value = String(newsRefreshMs);
-    }
+    if (sel && String(newsRefreshMs) !== sel.value) sel.value = String(newsRefreshMs);
 }
 function setEconAutoRefresh(ms) {
     if (econRefreshTimer) clearInterval(econRefreshTimer);
@@ -1703,9 +2016,7 @@ function setEconAutoRefresh(ms) {
     statusEcon = econRefreshMs ? `Auto ${Math.round(econRefreshMs/60000)}m` : "Manual";
     updateStatusBar();
     const sel = document.getElementById("econ-refresh-select");
-    if (sel && String(econRefreshMs) !== sel.value) {
-        sel.value = String(econRefreshMs);
-    }
+    if (sel && String(econRefreshMs) !== sel.value) sel.value = String(econRefreshMs);
 }
 
 /* NEWS CONTROLS */
@@ -1716,18 +2027,16 @@ function initNewsControls() {
     const impCheckboxes = Array.from(document.querySelectorAll(".ff-imp"));
     const countryCbs = Array.from(document.querySelectorAll(".ff-country"));
 
-    // Yahoo date
-    const savedDate = localStorage.getItem("news-date") || getTodayNY();
+    const savedDate = localStorage.getItem("news-date") || "";
     if (dateInput) {
         dateInput.value = savedDate;
         dateInput.addEventListener("change", () => {
-            localStorage.setItem("news-date", dateInput.value || getTodayNY());
+            localStorage.setItem("news-date", dateInput.value || "");
             seenNewsIds.clear();
             refreshYahoo();
         });
     }
 
-    // Econ date
     const savedEconDate = localStorage.getItem("econ-date") || getTodayNY();
     if (econDateInput) {
         econDateInput.value = savedEconDate;
@@ -1737,13 +2046,10 @@ function initNewsControls() {
         });
     }
 
-    // Country filter saved state
     const savedCountries = localStorage.getItem("ff-countries");
     if (savedCountries) {
         const set = new Set(savedCountries.split(","));
-        countryCbs.forEach(cb => {
-            cb.checked = set.has(cb.value);
-        });
+        countryCbs.forEach(cb => { cb.checked = set.has(cb.value); });
     }
     countryCbs.forEach(cb => {
         cb.addEventListener("change", () => {
@@ -1752,13 +2058,10 @@ function initNewsControls() {
         });
     });
 
-    // Impact filter
     const savedImp = localStorage.getItem("ff-imp");
     if (savedImp) {
         const parts = savedImp.split(",").map(s => s.trim().toLowerCase());
-        impCheckboxes.forEach(cb => {
-            cb.checked = parts.includes(cb.value.toLowerCase());
-        });
+        impCheckboxes.forEach(cb => { cb.checked = parts.includes(cb.value.toLowerCase()); });
     }
     impCheckboxes.forEach(cb => {
         cb.addEventListener("change", () => {
@@ -1767,7 +2070,6 @@ function initNewsControls() {
         });
     });
 
-    // News voice
     const savedVoice = localStorage.getItem("news-voice");
     if (savedVoice === "0") {
         newsSpeechOn = false;
@@ -1777,7 +2079,6 @@ function initNewsControls() {
         }
     }
 
-    // Auto-refresh selects
     const savedNewsMs = parseInt(localStorage.getItem("news-refresh-ms") || "0",10) || 0;
     const savedEconMs = parseInt(localStorage.getItem("econ-refresh-ms") || "0",10) || 0;
 
@@ -1804,7 +2105,6 @@ function initNewsControls() {
         });
     }
 
-    // Initial econ load
     refreshEcon();
 }
 
@@ -1829,14 +2129,21 @@ function initIndex() {
     indexTimer = setInterval(fetchIndexQuotes, 60000);
 }
 function fetchIndexQuotes() {
-    fetch(INDEX_URL)
-        .then(r => r.json())
-        .then(data => {
-            const result = data && data.quoteResponse && Array.isArray(data.quoteResponse.result)
-                ? data.quoteResponse.result
-                : [];
+    const url = YF_FEED_BASE + encodeURIComponent(INDEX_YAHOO_URL);
+    fetch(url)
+        .then(r => r.text())
+        .then(txt => {
+            let data = null;
+            try {
+                data = JSON.parse(txt);
+            } catch (e) {
+                console.warn("Index parse error:", e);
+            }
+            if (!data || !data.quoteResponse || !Array.isArray(data.quoteResponse.result)) {
+                return;
+            }
             const bySymbol = {};
-            result.forEach(q => { bySymbol[q.symbol] = q; });
+            data.quoteResponse.result.forEach(q => { bySymbol[q.symbol] = q; });
             renderIndexQuote("SPY", "idx-spy", bySymbol["SPY"]);
             renderIndexQuote("QQQ", "idx-qqq", bySymbol["QQQ"]);
             renderIndexQuote("VIX", "idx-vix", bySymbol["^VIX"]);
@@ -1845,6 +2152,7 @@ function fetchIndexQuotes() {
             console.warn("Index fetch error:", err);
         });
 }
+
 function renderIndexQuote(symbol, elId, q) {
     const el = document.getElementById(elId);
     if (!el) return;
