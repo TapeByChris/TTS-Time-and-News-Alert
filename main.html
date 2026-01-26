@@ -4,31 +4,36 @@
 <meta charset="UTF-8" />
 <title>Candlesticks Dashboard (Audio + Yahoo + FF Econ Calendar)</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap');
-
     :root {
-        --bg: #141414;
-        --panel: #1b1b1b;
-        --panel-2: #1e1e1e;
-        --panel-3: #232323;
-        --input: #1a1a1a;
-        --border: #1f1f1f;
-        --border-subtle: #1d1d1d;
-        --text: #d8d8d8;
-        --text-muted: #9a9a9a;
-        --green: #4e8f66;
-        --red: #8c3b3b;
-        --amber: #8a6a3d;
-        --focus: #5c6b7a;
+        --bg: #1b1b1b;
+        --panel: #232323;
+        --panel-2: #2a2a2a;
+        --panel-3: #2f2f2f;
+        --input: #1f1f1f;
+        --border: rgba(255,255,255,0.08);
+        --border-subtle: rgba(255,255,255,0.05);
+        --text: #f2f2f2;
+        --text-muted: #b7b7b7;
+        --muted: #8f8f8f;
+        --green: #6bc97a;
+        --red: #d63b3b;
+        --amber: #e1b56a;
+        --focus: #3a8dde;
         --ink: #0f0f0f;
-        --card: var(--panel);
+        --card: #262626;
         --alert: var(--red);
-        --dim: var(--text-muted);
+        --dim: var(--muted);
         --accent: var(--focus);
         --gold: var(--amber);
-        --cyan: var(--focus);
+        --cyan: #7db7e8;
         --line: var(--border);
-        --overlay: rgba(0,0,0,0.82);
+        --overlay: rgba(10,10,10,0.72);
+        --shadow-soft: 0 14px 30px rgba(0,0,0,0.4);
+        --inner-outline: inset 0 0 0 1px rgba(255,255,255,0.04);
+        --radius-sm: 8px;
+        --radius: 12px;
+        --radius-lg: 18px;
+        --mica: linear-gradient(180deg, rgba(38,38,38,0.98), rgba(28,28,28,0.98));
 
         /* NEW: global widget scales */
         --timer-scale: 1;
@@ -36,13 +41,16 @@
         --econ-scale: 1;
     }
 
-    html { font-size: 13px; }
+    html { font-size: 14px; }
 
     body {
-        background: var(--bg);
+        background:
+            radial-gradient(1200px 800px at 80% -20%, rgba(255,255,255,0.05), transparent 60%),
+            radial-gradient(900px 600px at -10% 120%, rgba(255,255,255,0.035), transparent 55%),
+            var(--bg);
         color: var(--text);
-        font-family: 'IBM Plex Sans Condensed', 'IBM Plex Mono', monospace;
-        line-height: 1.2;
+        font-family: "Segoe UI Variable", "Segoe UI", "Cascadia Mono", "Consolas", sans-serif;
+        line-height: 1.4;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -53,17 +61,24 @@
         transition: background 0.2s;
     }
 
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
     /* TOP BAR */
     .top-bar {
         width: 100%;
-        padding: 6px 12px;
-        background: var(--panel-2);
+        padding: 10px 16px;
+        background: var(--mica);
         border-bottom: 1px solid var(--border);
         display: flex;
         justify-content: space-between;
         align-items: center;
         gap: 8px;
         box-sizing: border-box;
+        box-shadow: var(--inner-outline);
+        animation: fadeUp 0.45s ease both;
     }
     .btn-group { display: flex; gap: 6px; }
     .cluster {
@@ -76,7 +91,7 @@
     }
     .time-block { line-height: 1.1; }
     .time-label {
-        color: var(--text-muted);
+        color: var(--muted);
         font-size: 0.6rem;
         letter-spacing: 0.08em;
         text-transform: uppercase;
@@ -89,13 +104,13 @@
         background: var(--panel-2);
         border: 1px solid var(--border);
         color: var(--text);
-        padding: 2px 6px;
+        padding: 4px 8px;
         cursor: pointer;
         font-weight: 600;
-        border-radius: 2px;
-        font-size: 0.65rem;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
+        border-radius: var(--radius-sm);
+        font-size: 0.7rem;
+        letter-spacing: 0.02em;
+        text-transform: none;
     }
     .header-btn:hover { background: var(--panel-3); outline: 1px solid var(--focus); outline-offset: -1px; }
     .help-btn { border-color: var(--focus); color: var(--text); }
@@ -107,14 +122,14 @@
         color: var(--text);
         min-width: 78px;
         cursor: pointer;
-        border-radius: 2px;
+        border-radius: var(--radius-sm);
         background: var(--panel-2);
-        padding: 2px 6px;
+        padding: 4px 8px;
         font-family: inherit;
         margin-right: 8px;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        font-size: 0.65rem;
+        text-transform: none;
+        letter-spacing: 0.02em;
+        font-size: 0.7rem;
     }
     .audio-btn.on {
         border-color: var(--green);
@@ -128,13 +143,13 @@
         color: var(--text);
         min-width: 100px;
         cursor: pointer;
-        border-radius: 2px;
+        border-radius: var(--radius-sm);
         background: var(--panel-2);
-        padding: 2px 6px;
+        padding: 4px 8px;
         font-family: inherit;
-        font-size: 0.65rem;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
+        font-size: 0.7rem;
+        text-transform: none;
+        letter-spacing: 0.02em;
     }
     .alarm-btn.on {
         border-color: var(--green);
@@ -146,15 +161,17 @@
     .status-bar {
         width: 100%;
         box-sizing: border-box;
-        padding: 2px 12px;
+        padding: 6px 16px;
         font-size: 0.6rem;
         color: var(--text-muted);
         display: flex;
         justify-content: space-between;
         gap: 8px 14px;
         flex-wrap: wrap;
-        background: var(--panel);
+        background: var(--mica);
         border-bottom: 1px solid var(--border-subtle);
+        box-shadow: var(--inner-outline);
+        animation: fadeUp 0.5s ease both;
     }
     .status-bar span { white-space: nowrap; }
     #status-alert {
@@ -162,32 +179,20 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
-    .section-bar {
-        width: 100%;
-        box-sizing: border-box;
-        padding: 2px 12px;
-        font-size: 0.6rem;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--text-muted);
-        border-bottom: 1px solid var(--border-subtle);
-        background: var(--panel);
-    }
-
     /* INDEX ROW */
     .index-row {
         width: 100%;
         box-sizing: border-box;
-        padding: 2px 12px;
+        padding: 6px 16px;
         display: flex;
-        gap: 4px;
+        gap: 8px;
         flex-wrap: wrap;
         align-items: center;
     }
     .index-chip {
         font-size: 0.65rem;
-        padding: 2px 6px;
-        border-radius: 2px;
+        padding: 4px 8px;
+        border-radius: var(--radius-sm);
         border: 1px solid var(--border);
         background: var(--panel-2);
         color: var(--text);
@@ -197,35 +202,6 @@
     .index-chip.up { border-color: var(--green); color: var(--text); }
     .index-chip.down { border-color: var(--red); color: var(--text); }
 
-    /* QUICK MUTE ROW */
-    .quick-mute-row {
-        width: 100%;
-        box-sizing: border-box;
-        padding: 2px 12px 0 12px;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-        font-size: 0.65rem;
-        color: var(--dim);
-        align-items: center;
-    }
-    .quick-mute-label {
-        margin-right: 8px;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-    }
-    .qm-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 1px 6px;
-        border-radius: 2px;
-        background: var(--panel-2);
-        border: 1px solid var(--border);
-        cursor: pointer;
-    }
-    .qm-chip input { width: auto; }
-
     /* GRID (UPDATED: no forced 50vh crop, supports scaling) */
     .grid-wrapper {
         width: 100%;
@@ -233,15 +209,16 @@
         overflow: visible;
         display: flex;
         justify-content: center;
-        padding: 4px 0 6px 0;
+        padding: 10px 0 12px 0;
         box-sizing: border-box;
         transform: scale(var(--timer-scale, 1));
         transform-origin: top center;
+        animation: fadeUp 0.6s ease both;
     }
     .grid-container {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 6px;
+        gap: 10px;
         width: 98%;
         max-width: 1600px;
         align-items: stretch;
@@ -249,39 +226,39 @@
 
     /* CARD */
     .card {
-        background: var(--panel);
+        background: linear-gradient(180deg, rgba(40,40,40,0.98), rgba(32,32,32,0.98));
         border: 1px solid var(--border);
-        border-radius: 2px;
-        padding: 8px;
+        border-radius: var(--radius);
+        padding: 16px;
         text-align: left;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        min-height: 6.5rem;
-        transition: background 0.15s, border-color 0.15s, transform 0.15s;
+        min-height: 7rem;
+        transition: background 0.2s, border-color 0.2s, transform 0.2s;
         transform: scale(var(--card-scale, 1));
         transform-origin: center;
         will-change: transform;
-        box-shadow: none;
+        box-shadow: var(--shadow-soft), var(--inner-outline);
     }
     .card.alert {
         background: var(--alert) !important;
         border-color: var(--red);
-        box-shadow: none;
+        box-shadow: var(--inner-outline);
     }
     .alert .c-title, .alert label { color: var(--text) !important; }
 
     .c-title {
-        color: var(--text-muted);
+        color: var(--muted);
         font-size: 0.62rem;
         text-transform: uppercase;
         margin: 0;
         letter-spacing: 0.06em;
     }
-    .c-title.muted { color: var(--text-muted); opacity: 0.7; }
+    .c-title.muted { color: var(--muted); opacity: 0.7; }
     .c-role {
         font-size: 0.6rem;
-        color: var(--text-muted);
+        color: var(--muted);
         letter-spacing: 0.1em;
         text-transform: uppercase;
         margin: 0;
@@ -292,10 +269,10 @@
         line-height: 1.1;
         font-family: 'IBM Plex Mono', monospace;
     }
-    .c-ms { font-size: 0.9rem; color: var(--dim); }
+    .c-ms { font-size: 0.9rem; color: var(--muted); }
     .c-sub {
         font-size: 0.65rem;
-        color: var(--dim);
+        color: var(--muted);
         text-transform: uppercase;
         letter-spacing: 0.08em;
     }
@@ -304,9 +281,9 @@
     .row {
         display: flex;
         justify-content: space-between;
-        gap: 6px;
-        margin-top: 4px;
-        padding-top: 4px;
+        gap: 8px;
+        margin-top: 8px;
+        padding-top: 8px;
         border-top: 1px solid var(--border);
         align-items: center;
         flex-wrap: wrap;
@@ -317,8 +294,8 @@
         justify-content: space-between;
         gap: 6px;
         border-bottom: 1px solid var(--border);
-        padding-bottom: 3px;
-        margin-bottom: 4px;
+        padding-bottom: 6px;
+        margin-bottom: 8px;
     }
     .panel-title {
         display: flex;
@@ -329,12 +306,12 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 6px;
-        padding: 2px 0;
+        gap: 8px;
+        padding: 4px 0;
     }
     .row-label {
         font-size: 0.6rem;
-        color: var(--dim);
+        color: var(--muted);
         text-transform: uppercase;
         letter-spacing: 0.06em;
         line-height: 1.1;
@@ -343,7 +320,7 @@
     .row-value {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         justify-content: flex-end;
         flex: 1 1 auto;
     }
@@ -357,10 +334,10 @@
         background: var(--input);
         border: 1px solid var(--border);
         color: var(--text);
-        padding: 1px 4px;
-        border-radius: 2px;
+        padding: 4px 6px;
+        border-radius: 4px;
         font-family: inherit;
-        font-size: 0.65rem;
+        font-size: 0.7rem;
         text-align: right;
         width: 64px;
     }
@@ -382,11 +359,11 @@
         justify-content: center;
     }
     .mute-label {
-        font-size: 0.6rem;
+        font-size: 0.65rem;
         display: inline-flex;
         align-items: center;
         gap: 3px;
-        color: var(--dim);
+        color: var(--muted);
         cursor: pointer;
         text-transform: uppercase;
         letter-spacing: 0.05em;
@@ -396,17 +373,18 @@
     /* BUTTON BASE */
     button {
         cursor: pointer;
-        border-radius: 2px;
+        border-radius: var(--radius-sm);
         border: 1px solid var(--border);
         background: var(--panel-2);
         color: var(--text);
-        padding: 2px 6px;
+        padding: 4px 8px;
         font-family: inherit;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        font-size: 0.6rem;
+        text-transform: none;
+        letter-spacing: 0.02em;
+        font-size: 0.7rem;
     }
-    button:hover { background: var(--panel-3); outline: 1px solid var(--focus); outline-offset: -1px; }
+    button:hover { background: rgba(0,120,212,0.16); border-color: rgba(0,120,212,0.6); }
+    button:focus-visible { outline: 2px solid rgba(0,120,212,0.75); outline-offset: 2px; }
 
     /* OVERLAYS (UPDATED to match theme vars) */
     .overlay {
@@ -430,14 +408,14 @@
         pointer-events: all;
     }
     .modal {
-        background: var(--card);
+        background: var(--mica);
         border: 1px solid var(--border);
-        border-radius: 2px;
-        padding: 14px;
+        border-radius: var(--radius-lg);
+        padding: 18px;
         max-width: 820px;
         width: min(92vw, 820px);
         color: var(--text);
-        box-shadow: none;
+        box-shadow: var(--shadow-soft), var(--inner-outline);
     }
     .modal h2 {
         border-bottom: 1px solid var(--border);
@@ -475,9 +453,10 @@
         padding: 6px 8px;
         border: 1px solid var(--border);
         background: var(--panel-2);
-        border-radius: 2px;
+        border-radius: 4px;
         gap: 10px;
         margin-bottom: 6px;
+        box-shadow: var(--inner-outline);
     }
     .cf-row span { color: var(--text); font-size: 0.7rem; }
 
@@ -503,7 +482,7 @@
 
     .theme-select, .news-select {
         background: var(--input);
-        border-radius: 2px;
+        border-radius: 4px;
         border: 1px solid var(--border);
         color: var(--text);
         padding: 3px 6px;
@@ -522,7 +501,7 @@
         color: var(--text);
         padding: 3px 6px;
         font-size: 0.6rem;
-        border-radius: 2px;
+        border-radius: 4px;
         text-transform: uppercase;
         letter-spacing: 0.06em;
     }
@@ -536,9 +515,10 @@
     .setting-group {
         border: 1px solid var(--border);
         background: var(--panel-2);
-        border-radius: 2px;
+        border-radius: 4px;
         padding: 10px;
         margin-bottom: 8px;
+        box-shadow: var(--inner-outline);
     }
     .setting-title {
         font-size: 0.65rem;
@@ -549,7 +529,7 @@
     }
     .setting-desc {
         font-size: 0.6rem;
-        color: var(--dim);
+        color: var(--muted);
         margin-bottom: 8px;
     }
     .setting-row {
@@ -557,7 +537,7 @@
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        padding: 8px 0;
+        padding: 10px 0;
         border-top: 1px solid var(--border-subtle);
     }
     .setting-row:first-of-type { border-top: none; padding-top: 0; }
@@ -573,12 +553,13 @@
     .scale-item {
         border: 1px solid var(--border);
         background: var(--panel-2);
-        border-radius: 2px;
+        border-radius: 4px;
         padding: 8px;
+        box-shadow: var(--inner-outline);
     }
     .scale-label {
         font-size: 0.6rem;
-        color: var(--text-muted);
+        color: var(--muted);
         margin-bottom: 6px;
         text-transform: uppercase;
         letter-spacing: 0.08em;
@@ -592,7 +573,7 @@
     .chip-row button {
         font-size: 0.6rem;
         padding: 2px 6px;
-        border-radius: 2px;
+        border-radius: 4px;
         border: 1px solid var(--border);
         background: var(--panel-2);
     }
@@ -605,7 +586,7 @@
         width: 100%;
         text-align: left;
         padding: 5px 6px;
-        border-radius: 2px;
+        border-radius: 4px;
         border: 1px solid var(--border);
         background: var(--panel-2);
         color: var(--text);
@@ -626,7 +607,7 @@
         margin-top: 10px;
     }
     .theme-swatch {
-        border-radius: 2px;
+        border-radius: 4px;
         min-height: 36px;
         display: flex;
         align-items: center;
@@ -643,20 +624,21 @@
     .news-wrapper {
         width: 100%;
         box-sizing: border-box;
-        padding: 4px 12px 8px 12px;
+        padding: 10px 16px 12px 16px;
         overflow-y: auto;
         flex: 1 1 auto;
         border-top: 1px solid var(--border-subtle);
         background: var(--bg);
+        animation: fadeUp 0.65s ease both;
     }
 .news-container {
-    background: var(--panel);
+    background: var(--mica);
     border: 1px solid var(--border);
-    padding: 6px 8px;
-    border-radius: 2px;
+    padding: 16px 18px;
+    border-radius: var(--radius);
     max-width: 1400px;
     margin: 0 auto 8px auto;
-    box-shadow: none;
+    box-shadow: var(--shadow-soft), var(--inner-outline);
     overflow: visible;
     position: relative;
 }
@@ -670,36 +652,44 @@
         align-items: center;
         gap: 10px;
         flex-wrap: wrap;
-        padding-bottom: 3px;
+        padding-bottom: 6px;
         padding-right: 40px;
         border-bottom: 1px solid var(--border-subtle);
         position: sticky;
         top: 0;
         z-index: 5;
-        background: var(--panel);
+        background: var(--mica);
     }
     .news-title {
         font-size: 0.65rem;
         text-transform: uppercase;
         letter-spacing: 0.1em;
-        color: var(--text-muted);
+        color: var(--muted);
     }
-    .news-controls {
+    .news-controls,
+    .econ-controls {
         display: flex;
         gap: 4px;
         align-items: center;
         flex-wrap: wrap;
     }
-    .news-voice-btn {
-        border-color: var(--accent);
+    .news-controls .news-select,
+    .econ-controls .news-select,
+    .news-controls .news-refresh,
+    .econ-controls .news-refresh,
+    .news-controls .news-voice-btn {
+        height: 24px;
+        padding: 2px 8px;
         font-size: 0.6rem;
-        padding: 1px 5px;
+        border-radius: var(--radius-sm);
+        display: inline-flex;
+        align-items: center;
     }
+    .news-voice-btn { border-color: var(--accent); }
     .news-voice-btn.off { border-color: var(--border); color: var(--text-muted); }
-    .news-refresh { font-size: 0.6rem; padding: 1px 5px; border-radius: 2px; }
     .refresh-state {
         font-size: 0.6rem;
-        color: var(--dim);
+        color: var(--muted);
         padding-left: 6px;
     }
     .refresh-state.active { color: var(--focus); }
@@ -753,7 +743,7 @@
         font-weight: 600;
     }
     .ff-high { background: var(--red); color: var(--text); }
-    .ff-medium { background: var(--amber); color: var(--text); }
+    .ff-medium { background: #e0b94a; color: #ffffff; }
     .ff-low { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
     .ff-main {
         display: flex;
@@ -813,13 +803,8 @@
     }
     .ff-filter-row input[type="checkbox"] { width: auto; }
     .econ-controls {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 6px;
-        font-size: 0.6rem;
-        align-items: center;
         color: var(--dim);
+        margin-top: 0;
     }
 
     .news-item.ff-past { opacity: 0.45; }
@@ -902,13 +887,13 @@ body::-webkit-scrollbar-thumb:hover {
     .news-impact {
         font-size: 0.55rem;
         padding: 1px 5px;
-        border-radius: 2px;
+        border-radius: var(--radius-sm);
         border: 1px solid var(--border);
         text-transform: uppercase;
         letter-spacing: 0.06em;
     }
-    .news-impact.high { background: var(--red); color: var(--text); border-color: var(--red); }
-    .news-impact.medium { background: var(--amber); color: var(--text); border-color: var(--amber); }
+    .news-impact.high { background: #d64545; color: var(--text); border-color: #d64545; }
+    .news-impact.medium { background: #e0b94a; color: #ffffff; border-color: #e0b94a; }
     .news-impact.low { background: var(--panel-2); color: var(--text); border-color: var(--border); }
     .news-ai-btn {
         margin-left: auto;
@@ -917,7 +902,7 @@ body::-webkit-scrollbar-thumb:hover {
         color: var(--accent);
         width: 28px;
         height: 24px;
-        border-radius: 2px;
+        border-radius: var(--radius-sm);
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -925,8 +910,7 @@ body::-webkit-scrollbar-thumb:hover {
     .news-ai-btn svg { width: 16px; height: 16px; }
     .news-ai-btn:hover { background: var(--panel-3); }
     .news-filter-row,
-    .ff-hot-row,
-    .silence-row {
+    .ff-hot-row {
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
@@ -947,20 +931,6 @@ body::-webkit-scrollbar-thumb:hover {
         gap: 4px;
         cursor: pointer;
     }
-    .silence-label {
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        margin-right: 4px;
-    }
-    .silence-chip {
-        border: 1px solid var(--border);
-        background: var(--panel-2);
-        color: var(--text);
-        padding: 1px 6px;
-        border-radius: 2px;
-        font-size: 0.6rem;
-    }
-    .silence-chip:hover { background: var(--panel-3); }
     .ff-hot {
         background: var(--panel-2) !important;
         border: 1px solid var(--red);
@@ -974,7 +944,7 @@ body::-webkit-scrollbar-thumb:hover {
     color: var(--accent);
     width: 36px;
     height: 36px;
-    border-radius: 2px;
+    border-radius: var(--radius-sm);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -988,62 +958,134 @@ body::-webkit-scrollbar-thumb:hover {
     top: 8px;
     z-index: 6;
 }
-.ai-form {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-.ai-form .field-label {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    color: var(--text-muted);
-}
-.ai-input, .ai-textarea {
-    background: var(--input);
-    border: 1px solid var(--border);
+.ai-modal { max-width: 980px; width: min(94vw, 980px); }
+.ai-modal h2 {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+    text-transform: none;
+    letter-spacing: 0.02em;
     color: var(--text);
-    padding: 4px 6px;
-    border-radius: 2px;
-    font-family: inherit;
-    font-size: 0.7rem;
-    width: 100%;
-    box-sizing: border-box;
 }
-.ai-textarea { min-height: 120px; resize: vertical; }
-.ai-textarea.large { min-height: 160px; }
-.ai-actions {
+.ai-chat-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+.ai-title {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--text);
+    letter-spacing: 0.01em;
+}
+.ai-subtitle {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+.ai-key-row {
     display: flex;
     gap: 6px;
     align-items: center;
     flex-wrap: wrap;
 }
-.ai-status {
-    font-size: 0.65rem;
-    color: var(--dim);
+.ai-key-row .ai-input {
+    min-width: 220px;
+    max-width: 320px;
 }
-.ai-response {
+.ai-input, .ai-textarea {
     background: var(--input);
     border: 1px solid var(--border);
-    border-radius: 2px;
-    padding: 6px;
-    min-height: 80px;
-    white-space: pre-wrap;
-    font-size: 0.7rem;
-    line-height: 1.4;
-}
-.ai-response strong {
     color: var(--text);
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 0.78rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+.ai-textarea { min-height: 90px; resize: vertical; }
+.ai-context {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    border: 1px solid var(--border);
+    background: var(--panel-2);
+    border-radius: var(--radius-sm);
+    padding: 6px 8px;
+    margin-bottom: 12px;
+}
+.ai-context-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+}
+.ai-link {
+    background: transparent;
+    border: none;
+    color: var(--accent);
+    padding: 0;
+    font-size: 0.7rem;
+}
+.ai-chat {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px;
+    min-height: 220px;
+    max-height: 360px;
+    overflow: auto;
+}
+.ai-messages { display: flex; flex-direction: column; gap: 8px; }
+.ai-msg { display: flex; animation: fadeUp 0.25s ease both; }
+.ai-msg.user { justify-content: flex-end; }
+.ai-bubble {
+    max-width: 78%;
+    padding: 8px 10px;
+    border-radius: 12px;
+    background: var(--panel-3);
+    border: 1px solid var(--border);
+    font-size: 0.78rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
+}
+.ai-bubble strong { color: var(--text); }
+.ai-msg.user .ai-bubble {
+    background: rgba(43,136,216,0.18);
+    border-color: rgba(43,136,216,0.4);
+}
+.ai-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    margin-top: 12px;
+}
+.ai-chat-input { min-height: 64px; }
+.ai-send-btn { min-width: 88px; }
+.ai-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+.ai-status {
+    font-size: 0.7rem;
+    color: var(--text-muted);
 }
 .ai-pill {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     padding: 2px 6px;
-    border-radius: 2px;
+    border-radius: var(--radius-sm);
     border: 1px solid var(--border);
     background: var(--panel-2);
-    font-size: 0.65rem;
+    font-size: 0.68rem;
     color: var(--text);
 }
 
@@ -1190,7 +1232,7 @@ body::-webkit-scrollbar-thumb:hover {
     <p>Each card is a candle timeframe. The timer shows how much time is left before the current candle closes.</p>
     <p><strong>ALERT AT</strong> is the number of seconds (or HH:MM:SS) before close where the card turns red and (if not muted) the system speaks an alert.</p>
     <h3>2. Mute & Visibility</h3>
-    <p>Use the <strong>MUTE</strong> checkbox on each card or the quick mute row to silence audio alerts per timeframe. Grey titles indicate muted timers.</p>
+    <p>Use the <strong>MUTE</strong> checkbox on each card to silence audio alerts per timeframe. Grey titles indicate muted timers.</p>
     <p>In <strong>SETTINGS → Visible Timeframes</strong> you can hide/show each timeframe card entirely, or use the presets (Scalping / Swing / All). Each timeframe also has a size slider.</p>
     <h3>3. RTH Session & Alarm</h3>
     <p>The RTH card counts down until market open, then until close. It will speak when the alert threshold is hit. The 10 AM alarm button plays a short beep at 9:59 AM ET once per day (no TTS).</p>
@@ -1218,25 +1260,34 @@ body::-webkit-scrollbar-thumb:hover {
   </div>
 </div>
 
-<!-- AI HELPER OVERLAY -->
+<!-- AI CHAT OVERLAY -->
 <div id="ai-ov" class="overlay" onclick="tog('ai-ov',0)">
-  <div class="modal" onclick="event.stopPropagation()">
+  <div class="modal ai-modal" onclick="event.stopPropagation()">
     <span class="close-btn" onclick="tog('ai-ov',0)">&times;</span>
-    <h2>AI News Helper</h2>
-    <p>Paste a headline or economic event and ask for impact, bullish/bearish thresholds, or whether it's a catalyst.</p>
-    <div class="ai-form">
-        <label class="field-label" for="ai-key">API Key</label>
-        <input id="ai-key" class="ai-input" type="password" placeholder="Groq API key (stored locally)">
-        <label class="field-label" for="ai-headline">Headline / Event</label>
-        <textarea id="ai-headline" class="ai-textarea large" placeholder="Paste the headline or event details..."></textarea>
-        <label class="field-label" for="ai-question">Question</label>
-        <textarea id="ai-question" class="ai-textarea" placeholder="Ask for impact, levels, catalyst risk..."></textarea>
-        <div class="ai-actions">
-            <button class="header-btn" onclick="saveAiKey()">Save Key</button>
-            <button class="header-btn" onclick="askAi()">Ask AI</button>
-            <span id="ai-status" class="ai-status"></span>
+    <div class="ai-chat-header">
+        <div>
+            <h2 class="ai-title">Market Copilot</h2>
+            <div class="ai-subtitle">Chat about headlines, catalysts, and levels in real time.</div>
         </div>
-        <div id="ai-response" class="ai-response">Response will appear here.</div>
+        <div class="ai-key-row">
+            <input id="ai-key" class="ai-input" type="password" placeholder="Groq API key (stored locally)">
+            <button class="header-btn" onclick="saveAiKey()">Save Key</button>
+        </div>
+    </div>
+    <div class="ai-context">
+        <span class="ai-context-label">Context</span>
+        <span id="ai-context" class="ai-pill">No headline attached</span>
+        <button class="ai-link" onclick="clearAiContext()">Clear</button>
+    </div>
+    <div class="ai-chat">
+        <div id="ai-messages" class="ai-messages"></div>
+    </div>
+    <div class="ai-input-row">
+        <textarea id="ai-input" class="ai-textarea ai-chat-input" placeholder="Ask about impact, levels, and catalyst risk..."></textarea>
+        <button class="header-btn ai-send-btn" onclick="sendAiMessage()">Send</button>
+    </div>
+    <div class="ai-actions">
+        <span id="ai-status" class="ai-status"></span>
     </div>
   </div>
 </div>
@@ -1264,22 +1315,9 @@ body::-webkit-scrollbar-thumb:hover {
     <span id="status-news">News: Manual</span>
     <span id="status-econ">Econ: Manual</span>
     <span id="status-alert">Alert: --</span>
-    <span id="status-silence">Silence: Off</span>
 </div>
 
 <!-- SECTION BAR -->
-<div class="section-bar">TIMERS · SESSION</div>
-
-<!-- QUICK MUTE ROW -->
-<div class="quick-mute-row" id="quick-mute-row"></div>
-<div class="silence-row">
-    <span class="silence-label">Silence:</span>
-    <button class="silence-chip" data-min="15">15m</button>
-    <button class="silence-chip" data-min="30">30m</button>
-    <button class="silence-chip" data-min="60">60m</button>
-    <button class="silence-chip" data-min="0">Off</button>
-</div>
-
 <!-- TIMERS GRID -->
 <div class="grid-wrapper">
     <div class="grid-container" id="grid"></div>
@@ -1291,10 +1329,10 @@ body::-webkit-scrollbar-thumb:hover {
     <!-- Yahoo Finance -->
     <div class="news-container" data-panel="yahoo">
         <div class="news-header">
-            <div class="news-title">📰 Market News Feed (Yahoo Finance)</div>
+            <div class="news-title">📰 Market News Feed</div>
             <div class="news-controls">
                 <span style="font-size:0.75rem;color:var(--dim);">Date:</span>
-                <input type="date" id="news-date" class="news-select">
+                <select id="news-date" class="news-select"></select>
                 <button class="news-refresh" onclick="refreshNews()">REFRESH NEWS</button>
                 <button id="news-voice-btn" class="news-voice-btn" onclick="togNewsVoice()">News TTS: ON</button>
                 <span id="yahoo-refresh-state" class="refresh-state"></span>
@@ -1323,10 +1361,10 @@ body::-webkit-scrollbar-thumb:hover {
     <!-- Economic Calendar (Forex Factory via backend) -->
     <div class="news-container" data-panel="econ">
         <div class="news-header">
-            <div class="news-title">📅 Economic Calendar (Forex Factory)</div>
+            <div class="news-title">📅 Economic Calendar</div>
             <div class="econ-controls">
                 <span>ECON DATE:</span>
-                <input type="date" id="econ-date" class="news-select">
+                <select id="econ-date" class="news-select"></select>
                 <button class="news-refresh" onclick="refreshEcon()">REFRESH CALENDAR</button>
             </div>
         </div>
@@ -1361,10 +1399,10 @@ body::-webkit-scrollbar-thumb:hover {
 <script>
 /* THEME SYSTEM */
 const THEMES = {
-    bloomberg: { '--bg': '#121212', '--card': '#1b1b1b', '--text': '#d8d8d8', '--alert': '#8c3b3b' },
-    nightops:  { '--bg': '#141414', '--card': '#1b1b1b', '--text': '#d8d8d8', '--alert': '#8c3b3b' },
-    minimal:   { '--bg': '#101010', '--card': '#1a1a1a', '--text': '#d0d0d0', '--alert': '#8c3b3b' },
-    terminal:  { '--bg': '#131313', '--card': '#1b1b1b', '--text': '#d8d8d8', '--alert': '#8c3b3b' }
+    bloomberg: { '--bg': '#1b1b1b', '--card': '#262626', '--text': '#f2f2f2', '--alert': '#d63b3b' },
+    nightops:  { '--bg': '#191919', '--card': '#242424', '--text': '#ededed', '--alert': '#d63b3b' },
+    minimal:   { '--bg': '#1d1d1d', '--card': '#2a2a2a', '--text': '#f0f0f0', '--alert': '#d63b3b' },
+    terminal:  { '--bg': '#1b1b1b', '--card': '#262626', '--text': '#d9f3d9', '--alert': '#d63b3b' }
 };
 
 /* TIMER CONFIG (with roles) */
@@ -1406,12 +1444,6 @@ let statusMarket = "--";
 let statusNews = "Manual";
 let statusEcon = "Manual";
 let statusAlert = "--";
-let statusSilence = "Off";
-
-/* Silence */
-let silenceTimer = null;
-let silenceUntil = 0;
-let silencePrevAudio = null;
 
 /* News impact filters */
 let newsImpactFilters = { high: true, medium: true, low: true };
@@ -1455,11 +1487,10 @@ function init() {
     initNewsControls();
     initNewsFilters();
     initEconHotControls();
-    initSilenceControls();
     bindNewsAiButtons();
     initAlarmButton();
     loadAiKey();
-    loadSilenceState();
+    initAiChat();
     loop();
     refreshNews(); // initial Yahoo
 }
@@ -1641,7 +1672,6 @@ function renderTimerGrid() {
       '</div>';
 
     document.getElementById("grid").innerHTML = html;
-    buildQuickMuteRow();
 }
 
 /* Rebuild grid when visible timeframes change */
@@ -1718,53 +1748,11 @@ function applyLayoutPreset(name) {
     buildTimeframeSettingsUI();
 }
 
-/* QUICK MUTE ROW */
-function buildQuickMuteRow() {
-    const row = document.getElementById('quick-mute-row');
-    if (!row) return;
-    let inner = '<span class="quick-mute-label">QUICK MUTE:</span>';
-    config.forEach((c, i) => {
-        if (!visibleTimeframes[i]) return;
-        const muEl = document.getElementById('mu-'+i);
-        const checked = muEl && muEl.checked;
-        const shortLabel = c.label
-            .replace(" Minute","m")
-            .replace(" Hour","h")
-            .replace(" ","");
-        inner += `
-            <label class="qm-chip">
-              <input type="checkbox" data-qm="${i}" ${checked?'checked':''}>
-              <span>${shortLabel}</span>
-            </label>
-        `;
-    });
-    row.innerHTML = inner;
-    Array.from(row.querySelectorAll('input[data-qm]')).forEach(inp => {
-        inp.addEventListener('change', () => {
-            const idx = parseInt(inp.getAttribute('data-qm'),10);
-            const muEl = document.getElementById('mu-'+idx);
-            if (muEl) {
-                muEl.checked = inp.checked;
-                save();
-            }
-        });
-    });
-}
-
 /* MAIN LOOP */
 function loop() {
     try {
         const nowMs = Date.now() + offset;
         const now = new Date(nowMs);
-        if (silenceUntil && Date.now() < silenceUntil) {
-            const minsLeft = Math.max(1, Math.ceil((silenceUntil - Date.now()) / 60000));
-            const nextLabel = minsLeft + "m";
-            if (nextLabel !== statusSilence) {
-                statusSilence = nextLabel;
-                updateStatusBar();
-            }
-        }
-
         const nyEl = document.getElementById('ny');
         if (!nyEl) {
             requestAnimationFrame(loop);
@@ -1949,77 +1937,11 @@ function setAudioOn(on, announce) {
     }
 }
 function togSnd() {
-    const turningOn = !audioOn;
-    if (turningOn) {
-        clearSilence(false);
-    }
-    setAudioOn(turningOn, true);
+    setAudioOn(!audioOn, true);
 }
 function setLastAlert(msg) {
     statusAlert = msg || "--";
     updateStatusBar();
-}
-function initSilenceControls() {
-    const buttons = Array.from(document.querySelectorAll(".silence-chip"));
-    buttons.forEach(btn => {
-        btn.addEventListener("click", () => {
-            const min = parseInt(btn.getAttribute("data-min") || "0", 10) || 0;
-            if (min <= 0) clearSilence(true);
-            else setSilence(min);
-        });
-    });
-}
-function setSilence(minutes) {
-    if (minutes <= 0) {
-        clearSilence(true);
-        return;
-    }
-    if (silenceTimer) clearTimeout(silenceTimer);
-    silencePrevAudio = audioOn;
-    silenceUntil = Date.now() + (minutes * 60000);
-    localStorage.setItem("silence-until", String(silenceUntil));
-    localStorage.setItem("silence-prev", silencePrevAudio ? "1" : "0");
-    statusSilence = minutes + "m";
-    updateStatusBar();
-    if (silencePrevAudio) {
-        setAudioOn(false, false);
-    }
-    const delay = silenceUntil - Date.now();
-    silenceTimer = setTimeout(() => {
-        clearSilence(true);
-    }, Math.max(1000, delay));
-}
-function clearSilence(restoreAudio) {
-    if (silenceTimer) clearTimeout(silenceTimer);
-    silenceTimer = null;
-    silenceUntil = 0;
-    localStorage.removeItem("silence-until");
-    localStorage.removeItem("silence-prev");
-    const shouldRestore = restoreAudio && silencePrevAudio;
-    silencePrevAudio = null;
-    statusSilence = "Off";
-    updateStatusBar();
-    if (shouldRestore) {
-        setAudioOn(true, false);
-    }
-}
-function loadSilenceState() {
-    const until = parseInt(localStorage.getItem("silence-until") || "0", 10) || 0;
-    const prev = localStorage.getItem("silence-prev") === "1";
-    if (until && Date.now() < until) {
-        silenceUntil = until;
-        silencePrevAudio = prev;
-        const minsLeft = Math.max(1, Math.ceil((until - Date.now()) / 60000));
-        statusSilence = minsLeft + "m";
-        updateStatusBar();
-        setAudioOn(false, false);
-        const delay = until - Date.now();
-        silenceTimer = setTimeout(() => {
-            clearSilence(true);
-        }, Math.max(1000, delay));
-    } else {
-        clearSilence(false);
-    }
 }
 function parseTime(v) {
     if (!v || typeof v !== "string") return 0;
@@ -2694,19 +2616,15 @@ function initNewsControls() {
     const impCheckboxes = Array.from(document.querySelectorAll(".ff-imp"));
     const countryCbs = Array.from(document.querySelectorAll(".ff-country"));
 
-    const savedDate = localStorage.getItem("news-date") || "";
+    initDateSelects();
     if (dateInput) {
-        dateInput.value = savedDate;
         dateInput.addEventListener("change", () => {
             localStorage.setItem("news-date", dateInput.value || "");
             seenNewsIds.clear();
             refreshYahoo();
         });
     }
-
-    const savedEconDate = localStorage.getItem("econ-date") || getTodayNY();
     if (econDateInput) {
-        econDateInput.value = savedEconDate;
         econDateInput.addEventListener("change", () => {
             seenFFIds.clear();
             refreshEcon();
@@ -2790,6 +2708,56 @@ function togNewsVoice() {
     localStorage.setItem("news-voice", newsSpeechOn ? "1" : "0");
 }
 
+function initDateSelects() {
+    const newsSelect = document.getElementById("news-date");
+    const econSelect = document.getElementById("econ-date");
+    const baseStr = getTodayNY ? getTodayNY() : new Date().toISOString().slice(0, 10);
+    const baseDate = new Date(baseStr + "T00:00:00");
+
+    populateDateSelect(newsSelect, baseDate, true, "news-date");
+    populateDateSelect(econSelect, baseDate, false, "econ-date");
+}
+
+function populateDateSelect(selectEl, baseDate, includeLatest, storageKey) {
+    if (!selectEl || !baseDate || Number.isNaN(baseDate.getTime())) return;
+    const saved = localStorage.getItem(storageKey) || "";
+    const options = [];
+
+    if (includeLatest) {
+        options.push({ value: "", label: "Latest" });
+    }
+
+    for (let i = 0; i < 14; i += 1) {
+        const d = new Date(baseDate);
+        d.setDate(baseDate.getDate() - i);
+        const value = formatDateValue(d);
+        let label = value;
+        if (i === 0) label = "Today";
+        else if (i === 1) label = "Yesterday";
+        else label = d.toLocaleDateString("en-US", { month: "short", day: "2-digit" });
+        options.push({ value, label });
+    }
+
+    selectEl.innerHTML = options
+        .map(opt => `<option value="${opt.value}">${opt.label}</option>`)
+        .join("");
+
+    if (saved && options.some(opt => opt.value === saved)) {
+        selectEl.value = saved;
+    } else if (!includeLatest) {
+        selectEl.value = formatDateValue(baseDate);
+    } else {
+        selectEl.value = "";
+    }
+}
+
+function formatDateValue(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+}
+
 function initNewsFilters() {
     const impCbs = Array.from(document.querySelectorAll(".news-imp"));
     const saved = localStorage.getItem("news-imp") || "high,medium,low";
@@ -2826,8 +2794,7 @@ function bindNewsAiButtons() {
 }
 function openAiWithHeadline(text) {
     openAiHelper();
-    const hl = document.getElementById("ai-headline");
-    if (hl) hl.value = text;
+    setAiContext(text);
 }
 function initEconHotControls() {
     const hotCbs = Array.from(document.querySelectorAll(".ff-hot-min"));
@@ -2915,7 +2882,10 @@ function initNotes() {
     });
 }
 
-/* AI HELPER */
+/* AI CHAT */
+let aiChatHistory = [];
+let aiContextText = "";
+
 function setAiStatus(msg) {
     const el = document.getElementById("ai-status");
     if (el) el.innerText = msg || "";
@@ -2925,13 +2895,50 @@ function loadAiKey() {
     const input = document.getElementById("ai-key");
     if (input) input.value = key;
 }
+function initAiChat() {
+    const input = document.getElementById("ai-input");
+    if (!input || input.dataset.bound) return;
+    input.dataset.bound = "1";
+    input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            sendAiMessage();
+        }
+    });
+}
+function setAiContext(text) {
+    const next = (text || "").trim();
+    const changed = next && next !== aiContextText;
+    aiContextText = next;
+    const el = document.getElementById("ai-context");
+    if (el) el.textContent = aiContextText || "No headline attached";
+    if (changed) resetAiChat();
+}
+function clearAiContext() {
+    setAiContext("");
+}
+function resetAiChat() {
+    aiChatHistory = [];
+    const list = document.getElementById("ai-messages");
+    if (list) {
+        list.innerHTML = "";
+        delete list.dataset.seeded;
+    }
+    ensureAiWelcome();
+}
+function ensureAiWelcome() {
+    const list = document.getElementById("ai-messages");
+    if (!list || list.dataset.seeded) return;
+    list.dataset.seeded = "1";
+    appendAiMessage("assistant", "Drop a headline or ask about impact, levels, and catalyst risk.", false);
+}
 function openAiHelper() {
     tog("ai-ov", 1);
     setAiStatus("");
-    const input = document.getElementById("ai-key");
-    if (input && !input.value) {
-        input.focus();
-    }
+    loadAiKey();
+    ensureAiWelcome();
+    const input = document.getElementById("ai-input");
+    if (input) input.focus();
 }
 function saveAiKey() {
     const input = document.getElementById("ai-key");
@@ -2964,28 +2971,49 @@ function formatAiResponse(text) {
     });
     return out.trim();
 }
-async function askAi() {
+function appendAiMessage(role, text, asHtml) {
+    const list = document.getElementById("ai-messages");
+    if (!list) return;
+    const row = document.createElement("div");
+    row.className = "ai-msg " + (role || "assistant");
+    const bubble = document.createElement("div");
+    bubble.className = "ai-bubble";
+    if (asHtml) bubble.innerHTML = text;
+    else bubble.textContent = text;
+    row.appendChild(bubble);
+    list.appendChild(row);
+    list.scrollTop = list.scrollHeight;
+}
+async function sendAiMessage() {
     const keyInput = document.getElementById("ai-key");
     const key = (keyInput && keyInput.value.trim()) || localStorage.getItem("groq-key") || "";
-    const headline = (document.getElementById("ai-headline")?.value || "").trim();
-    const question = (document.getElementById("ai-question")?.value || "").trim();
-    const out = document.getElementById("ai-response");
+    const input = document.getElementById("ai-input");
+    const message = (input && input.value.trim()) || "";
 
     if (!key) {
         setAiStatus("Add your Groq API key first.");
         return;
     }
-    if (!headline) {
-        setAiStatus("Add a headline or event.");
+    if (!message) {
+        setAiStatus("Type a question or prompt.");
         return;
     }
 
+    appendAiMessage("user", message, false);
+    aiChatHistory.push({ role: "user", content: message });
+    if (input) input.value = "";
     setAiStatus("Thinking...");
-    if (out) out.innerText = "Working on it...";
 
-    const prompt = question
-        ? `Headline/Event:\n${headline}\n\nQuestion:\n${question}`
-        : `Headline/Event:\n${headline}\n\nQuestion:\nExplain likely market impact, bullish/bearish thresholds or numbers to watch, and whether this is a catalyst. Keep it concise.`;
+    const messages = [
+        {
+            role: "system",
+            content: "You are a market news analyst. Be concise and practical. Mention what data levels would be bullish/bearish, expected market impact, and catalyst risk. Not financial advice."
+        }
+    ];
+    if (aiContextText) {
+        messages.push({ role: "system", content: "Context:\n" + aiContextText });
+    }
+    messages.push(...aiChatHistory);
 
     try {
         const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -2996,13 +3024,7 @@ async function askAi() {
             },
             body: JSON.stringify({
                 model: "llama-3.1-8b-instant",
-                messages: [
-                    {
-                        role: "system",
-                        content: "You are a market news analyst. Be concise and practical. Mention what data levels would be bullish/bearish, expected market impact, and catalyst risk. Not financial advice."
-                    },
-                    { role: "user", content: prompt }
-                ],
+                messages: messages,
                 temperature: 0.4,
                 max_tokens: 350
             })
@@ -3023,13 +3045,12 @@ async function askAi() {
         const text = data && data.choices && data.choices[0] && data.choices[0].message
             ? data.choices[0].message.content
             : "No response received.";
-        if (out) {
-            const safe = String(text || "").trim();
-            out.innerHTML = formatAiResponse(safe);
-        }
+        const safe = String(text || "").trim();
+        aiChatHistory.push({ role: "assistant", content: safe });
+        appendAiMessage("assistant", formatAiResponse(safe), true);
         setAiStatus("Done.");
     } catch (e) {
-        if (out) out.innerText = "Error: " + e.message;
+        appendAiMessage("assistant", "Error: " + e.message, false);
         setAiStatus("Request failed.");
     }
 }
@@ -3040,12 +3061,10 @@ function updateStatusBar() {
     const nEl = document.getElementById("status-news");
     const eEl = document.getElementById("status-econ");
     const aEl = document.getElementById("status-alert");
-    const sEl = document.getElementById("status-silence");
     if (mEl) mEl.innerText = "STATUS: " + statusMarket;
     if (nEl) nEl.innerText = "News: " + statusNews;
     if (eEl) eEl.innerText = "Econ: " + statusEcon;
     if (aEl) aEl.innerText = "Alert: " + statusAlert;
-    if (sEl) sEl.innerText = "Silence: " + statusSilence;
 }
 
 /* GLOBAL LOGGING */
