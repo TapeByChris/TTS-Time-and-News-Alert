@@ -1,7 +1,35 @@
 {
+  "name": "tts-time-news-alert",
+  "version": "1.0.0",
+  "main": "electron-main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "build": "electron-builder -w"
+  },
+  "build": {
+    "appId": "com.tts.time.news.alert",
+    "productName": "TTS Time and News Alert",
+    "icon": "app-icon.ico",
+    "files": [
+      "electron-main.js",
+      "main.html",
+      "server.js",
+      "package.json",
+      "app-icon.ico"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "app-icon.ico"
+    }
+  },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^5.2.1",
     "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "electron": "^40.1.0",
+    "electron-builder": "^26.7.0"
   }
 }
