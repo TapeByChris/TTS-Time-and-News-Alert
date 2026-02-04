@@ -196,6 +196,44 @@ app.get('/api/yahoo-rss', async (req, res) => {
 
 const QUOTES_CACHE_TTL_MS = 5 * 1000; // short TTL so it stays “live”
 const quotesCache = new Map(); // key -> { data, fetchedAt }
+const QUOTE_URLS = [
+  (symbols) => `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbols)}`,
+  (symbols) => `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbols)}`
+];
+
+async function fetchYahooQuoteFromChart(symbol) {
+  try {
+    const end = Math.floor(Date.now() / 1000) + 60 * 60;
+    const start = end - 7 * 24 * 60 * 60;
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?period1=${start}&period2=${end}&interval=1d&events=history`;
+    const r = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36',
+        'Accept': 'application/json,text/plain,*/*',
+        'Accept-Language': 'en-US,en;q=0.9'
+      }
+    });
+    if (!r.ok) return null;
+    const data = await r.json();
+    const result = data?.chart?.result?.[0];
+    if (!result || !result.timestamp) return null;
+    const quote = result.indicators?.quote?.[0] || {};
+    const closes = (quote.close || []).filter((val) => Number.isFinite(val));
+    if (closes.length < 2) return null;
+    const last = closes[closes.length - 1];
+    const prev = closes[closes.length - 2];
+    const change = last - prev;
+    const changePct = prev ? (change / prev) * 100 : null;
+    return {
+      symbol,
+      regularMarketPrice: last,
+      regularMarketChange: change,
+      regularMarketChangePercent: changePct
+    };
+  } catch (err) {
+    return null;
+  }
+}
 
 // Normalizes symbols string so cache keys are consistent
 function normalizeSymbols(symbols) {
@@ -216,25 +254,44 @@ app.get('/api/quotes', async (req, res) => {
       return res.json(cached.data);
     }
 
-    const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbols)}`;
     console.log(`Fetching Yahoo quotes: ${symbols}`);
 
-    const r = await fetch(url, {
-      headers: {
-        // Yahoo is more likely to respond cleanly with a browser-like UA
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36',
-        'Accept': 'application/json,text/plain,*/*',
-        'Accept-Language': 'en-US,en;q=0.9'
-      }
-    });
+    let data = null;
+    let lastStatus = null;
+    for (const buildUrl of QUOTE_URLS) {
+      const url = buildUrl(symbols);
+      try {
+        const r = await fetch(url, {
+          headers: {
+            // Yahoo is more likely to respond cleanly with a browser-like UA
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36',
+            'Accept': 'application/json,text/plain,*/*',
+            'Accept-Language': 'en-US,en;q=0.9'
+          }
+        });
 
-    if (!r.ok) {
-      const txt = await r.text();
-      console.error('Yahoo quote fetch failed:', r.status, txt.slice(0, 300));
-      return res.status(502).json({ error: 'Yahoo fetch failed', status: r.status });
+        if (!r.ok) {
+          const txt = await r.text();
+          lastStatus = r.status;
+          console.error('Yahoo quote fetch failed:', r.status, txt.slice(0, 300));
+          continue;
+        }
+
+        data = await r.json();
+        break;
+      } catch (err) {
+        console.error('Yahoo quote fetch exception:', err);
+      }
     }
 
-    const data = await r.json();
+    if (!data || !data.quoteResponse || !Array.isArray(data.quoteResponse.result) || data.quoteResponse.result.length === 0) {
+      const symbolList = symbols.split(',').map(s => s.trim()).filter(Boolean);
+      const fallbacks = await Promise.all(symbolList.map(s => fetchYahooQuoteFromChart(s)));
+      const results = fallbacks.filter(Boolean);
+      const fallbackPayload = { quoteResponse: { result: results } };
+      quotesCache.set(symbols, { data: fallbackPayload, fetchedAt: now });
+      return res.json(fallbackPayload);
+    }
     quotesCache.set(symbols, { data, fetchedAt: now });
     res.json(data);
   } catch (e) {

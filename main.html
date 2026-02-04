@@ -658,6 +658,11 @@
         background: var(--bg);
         animation: fadeUp 0.65s ease both;
     }
+
+    @media (max-width: 1100px) {
+        .watchlist-grid { grid-template-columns: 1fr; }
+        .watchlist-row { grid-template-columns: 64px 1fr 80px 64px; }
+    }
 .news-container {
     background: var(--mica);
     border: 1px solid var(--border);
@@ -672,6 +677,87 @@
     /* NEW: scale each panel separately */
     .news-container[data-panel="yahoo"] { transform: scale(var(--yahoo-scale, 1)); transform-origin: top center; }
     .news-container[data-panel="econ"]  { transform: scale(var(--econ-scale, 1));  transform-origin: top center; }
+
+    .watchlist-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 8px;
+    }
+    .watchlist-col {
+        border: 1px solid var(--border-subtle);
+        background: var(--panel-2);
+        border-radius: var(--radius-sm);
+        padding: 10px;
+        box-shadow: var(--inner-outline);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-height: 140px;
+    }
+    .watchlist-col-title {
+        font-size: 0.6rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+    .watchlist-col-controls {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+    .watchlist-input {
+        flex: 1 1 auto;
+        width: 100%;
+        text-align: left;
+        font-size: 0.65rem;
+        padding: 4px 6px;
+        border-radius: 4px;
+        background: var(--input);
+        border: 1px solid var(--border);
+        color: var(--text);
+    }
+    .watchlist-list {
+        display: grid;
+        gap: 6px;
+        font-size: 0.7rem;
+    }
+    .watchlist-row {
+        display: grid;
+        grid-template-columns: 70px 1fr 90px 70px;
+        gap: 6px;
+        align-items: center;
+        padding: 4px 6px;
+        border-radius: 4px;
+        background: var(--panel-3);
+        border: 1px solid var(--border-subtle);
+    }
+    .watchlist-symbol {
+        font-weight: 600;
+        color: var(--text);
+    }
+    .watchlist-price {
+        color: var(--text);
+        text-align: right;
+    }
+    .watchlist-change {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+    .watchlist-change.up { color: var(--green); }
+    .watchlist-change.down { color: var(--red); }
+    .watchlist-row.up .watchlist-pct { color: var(--green); }
+    .watchlist-row.down .watchlist-pct { color: var(--red); }
+    .watchlist-pct {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        color: var(--text-muted);
+    }
+    .watchlist-empty {
+        color: var(--text-muted);
+        font-size: 0.65rem;
+        padding: 6px;
+    }
 
     .news-header {
         display: flex;
@@ -1769,6 +1855,52 @@ body::-webkit-scrollbar-thumb:hover {
             <div id="news-list" class="news-list">Loading…</div>
         </div>
     </div>
+
+    <!-- Watchlist (Net Change) -->
+    <div class="news-container tos-panel watchlist-panel" data-panel="watchlist">
+        <div class="news-header tos-panel-header">
+            <div class="news-title tos-panel-title active">WATCHLIST NET CHANGE</div>
+            <div class="news-controls tos-panel-tools">
+                <span style="font-size:0.7rem;color:var(--dim);">Auto: 5m</span>
+                <span style="font-size:0.7rem;color:var(--dim);">Sort:</span>
+                <select id="wl-sort" class="news-select tos-input">
+                    <option value="symbol">Symbol</option>
+                    <option value="change">Net Change</option>
+                    <option value="pct">% Change</option>
+                </select>
+                <button id="wl-refresh-btn" class="news-refresh tos-button">REFRESH WATCHLIST</button>
+                <span id="wl-refresh-state" class="refresh-state"></span>
+            </div>
+        </div>
+        <div class="tos-panel-body">
+            <div class="watchlist-grid">
+                <div class="watchlist-col">
+                    <div class="watchlist-col-title">STOCKS</div>
+                    <div class="watchlist-col-controls">
+                        <input id="wl-input-stocks" class="watchlist-input" placeholder="AAPL, MSFT, NVDA">
+                        <button class="tos-button" onclick="applyWatchlistGroup('stocks')">APPLY</button>
+                    </div>
+                    <div id="wl-list-stocks" class="watchlist-list">Loading…</div>
+                </div>
+                <div class="watchlist-col">
+                    <div class="watchlist-col-title">SECTORS</div>
+                    <div class="watchlist-col-controls">
+                        <input id="wl-input-sectors" class="watchlist-input" placeholder="XLF, XLK, XLE">
+                        <button class="tos-button" onclick="applyWatchlistGroup('sectors')">APPLY</button>
+                    </div>
+                    <div id="wl-list-sectors" class="watchlist-list">Loading…</div>
+                </div>
+                <div class="watchlist-col">
+                    <div class="watchlist-col-title">ETFS</div>
+                    <div class="watchlist-col-controls">
+                        <input id="wl-input-etfs" class="watchlist-input" placeholder="QQQ, SPY, NQ=F, ES=F, IWM">
+                        <button class="tos-button" onclick="applyWatchlistGroup('etfs')">APPLY</button>
+                    </div>
+                    <div id="wl-list-etfs" class="watchlist-list">Loading…</div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 </div>
@@ -1815,6 +1947,23 @@ let newsRefreshMs = 0;
 let econRefreshMs = 0;
 let newsRefreshTimer = null;
 let econRefreshTimer = null;
+
+/* Watchlist (net change) */
+const WATCHLIST_REFRESH_MS = 5 * 60 * 1000;
+const WATCHLIST_STORAGE_KEYS = {
+    stocks: "watchlist-stocks",
+    sectors: "watchlist-sectors",
+    etfs: "watchlist-etfs"
+};
+const WATCHLIST_SORT_KEY = "watchlist-sort";
+const WATCHLIST_DEFAULTS = {
+    stocks: ["AAPL","MSFT","NVDA","TSLA","AMD"],
+    sectors: ["XLF","XLK","XLE","XLP","XLY","XLI","XLB","XLU","XLV","XLRE"],
+    etfs: ["QQQ","SPY","NQ=F","ES=F","IWM"]
+};
+let watchlistTimer = null;
+let watchlistLastUpdated = "";
+let watchlistLastUpdatedMs = 0;
 
 /* Status bar state */
 let statusMarket = "--";
@@ -1865,6 +2014,7 @@ function init() {
     initNewsControls();
     initNewsFilters();
     initEconHotControls();
+    initWatchlist();
     initAnalysisToggle();
     initAlarmButton();
     startLoop();
@@ -3039,6 +3189,152 @@ function setEconAutoRefresh(ms) {
     updateStatusBar();
     const sel = document.getElementById("econ-refresh-select");
     if (sel && String(econRefreshMs) !== sel.value) sel.value = String(econRefreshMs);
+}
+
+/* WATCHLIST (Net Change) */
+function normalizeWatchlistSymbols(raw) {
+    return String(raw || "")
+        .split(/[,\\s]+/)
+        .map(s => s.trim())
+        .filter(Boolean)
+        .map(s => s.toUpperCase());
+}
+function getWatchlistSymbols(group) {
+    const key = WATCHLIST_STORAGE_KEYS[group];
+    const saved = localStorage.getItem(key);
+    if (saved !== null) {
+        return normalizeWatchlistSymbols(saved);
+    }
+    return WATCHLIST_DEFAULTS[group] || [];
+}
+function setWatchlistSymbols(group, symbols) {
+    const key = WATCHLIST_STORAGE_KEYS[group];
+    const clean = normalizeWatchlistSymbols(symbols.join(","));
+    localStorage.setItem(key, clean.join(","));
+}
+function applyWatchlistGroup(group) {
+    const input = document.getElementById(`wl-input-${group}`);
+    if (!input) return;
+    const list = normalizeWatchlistSymbols(input.value);
+    setWatchlistSymbols(group, list);
+    refreshWatchlist();
+}
+function initWatchlist() {
+    const groups = ["stocks","sectors","etfs"];
+    groups.forEach(group => {
+        const input = document.getElementById(`wl-input-${group}`);
+        if (input) {
+            input.value = getWatchlistSymbols(group).join(", ");
+            input.addEventListener("blur", () => applyWatchlistGroup(group));
+        }
+    });
+    const btn = document.getElementById("wl-refresh-btn");
+    if (btn) btn.addEventListener("click", refreshWatchlist);
+    const sortSel = document.getElementById("wl-sort");
+    if (sortSel) {
+        sortSel.value = localStorage.getItem(WATCHLIST_SORT_KEY) || "symbol";
+        sortSel.addEventListener("change", () => {
+            localStorage.setItem(WATCHLIST_SORT_KEY, sortSel.value);
+            refreshWatchlist();
+        });
+    }
+    refreshWatchlist();
+    if (watchlistTimer) clearInterval(watchlistTimer);
+    watchlistTimer = setInterval(refreshWatchlist, WATCHLIST_REFRESH_MS);
+    setInterval(updateWatchlistRefreshState, 60 * 1000);
+}
+function refreshWatchlist() {
+    const stocks = getWatchlistSymbols("stocks");
+    const sectors = getWatchlistSymbols("sectors");
+    const etfs = getWatchlistSymbols("etfs");
+    const allSymbols = Array.from(new Set([...stocks, ...sectors, ...etfs]));
+    const stateEl = document.getElementById("wl-refresh-state");
+
+    if (!allSymbols.length) {
+        renderWatchlistColumn("stocks", stocks, {});
+        renderWatchlistColumn("sectors", sectors, {});
+        renderWatchlistColumn("etfs", etfs, {});
+        if (stateEl) stateEl.textContent = "No symbols";
+        return;
+    }
+
+    const url = `http://localhost:3000/api/quotes?symbols=${encodeURIComponent(allSymbols.join(","))}`;
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            const results = (data && data.quoteResponse && data.quoteResponse.result) ? data.quoteResponse.result : [];
+            const bySymbol = {};
+            results.forEach(q => { if (q && q.symbol) bySymbol[q.symbol.toUpperCase()] = q; });
+            renderWatchlistColumn("stocks", stocks, bySymbol);
+            renderWatchlistColumn("sectors", sectors, bySymbol);
+            renderWatchlistColumn("etfs", etfs, bySymbol);
+            const now = new Date();
+            watchlistLastUpdatedMs = now.getTime();
+            watchlistLastUpdated = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+            updateWatchlistRefreshState();
+        })
+        .catch(err => {
+            console.warn("Watchlist fetch error:", err);
+            if (stateEl) stateEl.textContent = "Offline";
+        });
+}
+function updateWatchlistRefreshState() {
+    const stateEl = document.getElementById("wl-refresh-state");
+    if (!stateEl) return;
+    if (!watchlistLastUpdatedMs) {
+        stateEl.textContent = "Waiting...";
+        return;
+    }
+    const ageMs = Date.now() - watchlistLastUpdatedMs;
+    const mins = Math.floor(ageMs / 60000);
+    const stale = ageMs > 10 * 60 * 1000;
+    const suffix = stale ? " (Stale)" : "";
+    stateEl.textContent = `Updated ${watchlistLastUpdated}${mins ? ` • ${mins}m ago` : ""}${suffix}`;
+}
+function renderWatchlistColumn(group, symbols, bySymbol) {
+    const listEl = document.getElementById(`wl-list-${group}`);
+    if (!listEl) return;
+    if (!symbols || !symbols.length) {
+        listEl.innerHTML = '<div class=\"watchlist-empty\">No symbols.</div>';
+        return;
+    }
+    const sortKey = localStorage.getItem(WATCHLIST_SORT_KEY) || "symbol";
+    const sorted = [...symbols].sort((a, b) => {
+        if (sortKey === "symbol") return a.localeCompare(b);
+        const qa = bySymbol[a.toUpperCase()] || {};
+        const qb = bySymbol[b.toUpperCase()] || {};
+        const ca = Number(qa.regularMarketChange || 0);
+        const cb = Number(qb.regularMarketChange || 0);
+        const pa = Number(qa.regularMarketChangePercent || 0);
+        const pb = Number(qb.regularMarketChangePercent || 0);
+        if (sortKey === "change") return cb - ca;
+        if (sortKey === "pct") return pb - pa;
+        return 0;
+    });
+    const rows = sorted.map(sym => {
+        const q = bySymbol[sym.toUpperCase()];
+        if (!q || q.regularMarketPrice == null) {
+            return '<div class=\"watchlist-row\">' +
+                `<div class=\"watchlist-symbol\">${sym}</div>` +
+                '<div class=\"watchlist-price\">--</div>' +
+                '<div class=\"watchlist-change\">--</div>' +
+                '<div class=\"watchlist-pct\">--</div>' +
+            '</div>';
+        }
+        const price = Number(q.regularMarketPrice);
+        const change = Number(q.regularMarketChange || 0);
+        const pct = Number(q.regularMarketChangePercent || 0);
+        const changeClass = change > 0 ? "up" : (change < 0 ? "down" : "");
+        const changeStr = (change >= 0 ? "+" : "") + change.toFixed(2);
+        const pctStr = (pct >= 0 ? "+" : "") + pct.toFixed(2) + "%";
+        return `<div class=\"watchlist-row ${changeClass}\">` +
+            `<div class=\"watchlist-symbol\">${sym}</div>` +
+            `<div class=\"watchlist-price\">${price.toFixed(2)}</div>` +
+            `<div class=\"watchlist-change ${changeClass}\">${changeStr}</div>` +
+            `<div class=\"watchlist-pct\">${pctStr}</div>` +
+        '</div>';
+    }).join("");
+    listEl.innerHTML = rows;
 }
 
 /* NEWS CONTROLS */
