@@ -15,8 +15,8 @@
         --text: #E0E3E7;
         --text-muted: #B1B6BC;
         --muted: #7B8086;
-        --green: #6bc97a;
-        --red: #D94A4A;
+        --green: #38F27A;
+        --red: #FF4D4D;
         --amber: #e1b56a;
         --alert: #FF5A5A;
         --alert-bg: #6A2A2A;
@@ -341,7 +341,7 @@
         padding: 4px 0;
     }
     .row-label {
-        font-size: 0.6rem;
+        font-size: 0.7rem;
         color: var(--muted);
         text-transform: uppercase;
         letter-spacing: 0.06em;
@@ -659,6 +659,49 @@
         animation: fadeUp 0.65s ease both;
     }
 
+    /* Landscape layout option (keeps portrait default unchanged) */
+    body.landscape-mode .app-frame {
+        display: grid;
+        grid-template-rows: auto auto minmax(0, 1.2fr) minmax(0, 0.8fr);
+        grid-template-columns: 1fr 1fr;
+    }
+    body.landscape-mode .top-bar,
+    body.landscape-mode .status-bar {
+        grid-column: 1 / -1;
+    }
+    body.landscape-mode .news-wrapper {
+        grid-column: 2 / 3;
+        grid-row: 3 / span 2;
+        min-height: 0;
+        border-top: none;
+        border-left: 1px solid var(--border-subtle);
+        display: flex;
+        flex-direction: column;
+    }
+    body.landscape-mode .timers-panel {
+        grid-column: 1 / 2;
+        grid-row: 3;
+        min-height: 0;
+    }
+    body.landscape-mode .timers-panel .tos-panel-body {
+        overflow: auto;
+    }
+    body.landscape-mode .watchlist-panel {
+        grid-column: 1 / 2;
+        grid-row: 4;
+        min-height: 0;
+        align-self: stretch;
+        overflow: hidden;
+    }
+    body.landscape-mode .watchlist-panel .tos-panel-body {
+        overflow: auto;
+    }
+    body.landscape-mode .news-container.econ-panel,
+    body.landscape-mode .news-container.news-panel {
+        flex: 1 1 0;
+        min-height: 0;
+    }
+
     @media (max-width: 1100px) {
         .watchlist-grid { grid-template-columns: 1fr; }
         .watchlist-row { grid-template-columns: 64px 1fr 80px 64px; }
@@ -732,9 +775,50 @@
         background: var(--panel-3);
         border: 1px solid var(--border-subtle);
     }
+    .watchlist-row.pinned {
+        border-color: rgba(225, 181, 106, 0.6);
+        background: rgba(225, 181, 106, 0.12);
+        box-shadow: inset 0 0 0 1px rgba(225, 181, 106, 0.35);
+    }
     .watchlist-symbol {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         font-weight: 600;
         color: var(--text);
+    }
+    .watchlist-pin {
+        width: 30px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        border: 1px solid var(--border-subtle);
+        background: var(--panel-2);
+        color: var(--text);
+        font-size: 0.65rem;
+        line-height: 1;
+        cursor: pointer;
+        user-select: none;
+        padding: 0;
+        opacity: 0.8;
+    }
+    .watchlist-pin:hover {
+        opacity: 1;
+        border-color: rgba(225, 181, 106, 0.6);
+        background: rgba(225, 181, 106, 0.08);
+    }
+    .watchlist-pin svg {
+        width: 24px;
+        height: 24px;
+        fill: currentColor;
+        display: block;
+    }
+    .watchlist-pin.active {
+        color: var(--ink);
+        background: var(--gold);
+        border-color: rgba(225, 181, 106, 0.8);
     }
     .watchlist-price {
         color: var(--text);
@@ -743,6 +827,7 @@
     .watchlist-change {
         text-align: right;
         font-variant-numeric: tabular-nums;
+        font-weight: 700;
     }
     .watchlist-change.up { color: var(--green); }
     .watchlist-change.down { color: var(--red); }
@@ -752,6 +837,7 @@
         text-align: right;
         font-variant-numeric: tabular-nums;
         color: var(--text-muted);
+        font-weight: 700;
     }
     .watchlist-empty {
         color: var(--text-muted);
@@ -801,7 +887,7 @@
     .news-voice-btn { border-color: var(--accent); }
     .news-voice-btn.off { border-color: var(--border); color: var(--text-muted); }
     .refresh-state {
-        font-size: 0.6rem;
+        font-size: 0.7rem;
         color: var(--muted);
         padding-left: 6px;
     }
@@ -1068,8 +1154,8 @@ body::-webkit-scrollbar-thumb:hover {
         --text: #FFFFFF;
         --text-muted: #FFFFFF;
         --muted: #FFFFFF;
-        --green: #6bc97a;
-        --red: #d63b3b;
+        --green: #38F27A;
+        --red: #FF4D4D;
         --amber: #e1b56a;
         --focus: #737373;
         --mica: #3C3C3C;
@@ -1193,6 +1279,49 @@ body::-webkit-scrollbar-thumb:hover {
     }
     .grid-wrapper { width: 100% !important; padding: 0 !important; }
     .grid-container { width: 100% !important; max-width: none !important; gap: 2px !important; }
+
+    body.landscape-mode .app-frame {
+        display: grid;
+        grid-template-rows: auto auto minmax(0, 1.2fr) minmax(0, 0.8fr);
+        grid-template-columns: 1fr 1fr;
+    }
+    body.landscape-mode .top-bar,
+    body.landscape-mode .status-bar {
+        grid-column: 1 / -1;
+    }
+    body.landscape-mode .news-wrapper {
+        grid-column: 2 / 3;
+        grid-row: 3 / span 2;
+        min-height: 0;
+        border-top: none;
+        border-left: 1px solid var(--frame-subtle);
+        display: flex;
+        flex-direction: column;
+    }
+    body.landscape-mode .timers-panel {
+        grid-column: 1 / 2;
+        grid-row: 3;
+        min-height: 0;
+        align-self: stretch;
+    }
+    body.landscape-mode .timers-panel .tos-panel-body {
+        overflow: auto;
+    }
+    body.landscape-mode .watchlist-panel {
+        grid-column: 1 / 2;
+        grid-row: 4;
+        min-height: 0;
+        align-self: stretch;
+        overflow: hidden;
+    }
+    body.landscape-mode .watchlist-panel .tos-panel-body {
+        overflow: auto;
+    }
+    body.landscape-mode .news-container.econ-panel,
+    body.landscape-mode .news-container.news-panel {
+        flex: 1 1 0;
+        min-height: 0;
+    }
 
     .card {
         background: var(--panel-2) !important;
@@ -1343,7 +1472,7 @@ body::-webkit-scrollbar-thumb:hover {
 
     .news-wrapper {
         padding: 0 !important;
-        overflow: hidden !important;
+        overflow: auto !important;
         display: flex !important;
         flex-direction: column !important;
         gap: 0 !important;
@@ -1352,8 +1481,13 @@ body::-webkit-scrollbar-thumb:hover {
         border-top: 1px solid var(--frame-subtle) !important;
         background: var(--panel-2) !important;
     }
-    .news-container.econ-panel { flex: 0 1 40% !important; min-height: 160px; max-height: 45%; }
-    .news-container.news-panel { flex: 1 1 60% !important; min-height: 0 !important; }
+    .news-container.econ-panel,
+    .news-container.news-panel,
+    .news-container.watchlist-panel {
+        flex: 0 0 auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+    }
     .news-container {
         margin: 0 !important;
         padding: 0 !important;
@@ -1416,7 +1550,7 @@ body::-webkit-scrollbar-thumb:hover {
     .news-item {
         padding: 2px 6px !important;
         border-bottom: 1px solid #4B4B4B !important;
-        font-size: 12px !important;
+        font-size: 11px !important;
         display: flex !important;
         align-items: center !important;
         gap: 6px !important;
@@ -1427,7 +1561,7 @@ body::-webkit-scrollbar-thumb:hover {
     .news-time { color: var(--text-primary) !important; }
     .ff-cur,
     .ff-stat-label,
-    .row-label { color: var(--text-secondary) !important; }
+    .row-label { color: var(--text-secondary) !important; font-size: 11px !important; }
     .ff-label,
     .ff-stat-val,
     .row-value { color: var(--text-primary) !important; }
@@ -1474,6 +1608,23 @@ body::-webkit-scrollbar-thumb:hover {
         background: var(--panel-2) !important;
         color: var(--text-primary) !important;
     }
+    .refresh-state { font-size: 11px !important; }
+
+    .watchlist-panel .watchlist-grid { gap: 6px !important; margin-top: 4px !important; }
+    .watchlist-panel .watchlist-col { padding: 6px !important; }
+    .watchlist-panel .watchlist-col-title { font-size: 11px !important; letter-spacing: 0.08em !important; }
+    .watchlist-panel .watchlist-input { font-size: 11px !important; height: var(--control-h) !important; }
+    .watchlist-panel .watchlist-list { font-size: 11px !important; }
+    .watchlist-panel .watchlist-row {
+        padding: 2px 6px !important;
+        grid-template-columns: 62px 1fr 70px 70px !important;
+    }
+    .watchlist-panel .watchlist-price,
+    .watchlist-panel .watchlist-change,
+    .watchlist-panel .watchlist-pct { font-variant-numeric: tabular-nums; }
+    .watchlist-panel .watchlist-change { font-weight: 700; }
+    .watchlist-panel .watchlist-pct { font-weight: 700; }
+    .watchlist-anchor { display: none; }
 
     .news-impact,
     .ff-badge {
@@ -1668,6 +1819,18 @@ body::-webkit-scrollbar-thumb:hover {
         </div>
 
         <div class="setting-group">
+            <div class="setting-title">Orientation</div>
+            <div class="setting-desc">Switch layout between portrait and landscape.</div>
+            <div class="setting-row">
+                <label class="setting-label">Layout</label>
+                <select id="layout-orientation" class="news-select">
+                    <option value="portrait">Portrait</option>
+                    <option value="landscape">Landscape</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="setting-group">
             <div class="setting-title">Visible Timeframes</div>
             <div class="setting-desc">Hide or show timeframe cards and use quick presets.</div>
             <div class="chip-row">
@@ -1857,9 +2020,10 @@ body::-webkit-scrollbar-thumb:hover {
     </div>
 
     <!-- Watchlist (Net Change) -->
+    <div id="watchlist-anchor" class="watchlist-anchor"></div>
     <div class="news-container tos-panel watchlist-panel" data-panel="watchlist">
         <div class="news-header tos-panel-header">
-            <div class="news-title tos-panel-title active">WATCHLIST NET CHANGE</div>
+            <div class="news-title tos-panel-title active">WATCHLIST</div>
             <div class="news-controls tos-panel-tools">
                 <span style="font-size:0.7rem;color:var(--dim);">Auto: 5m</span>
                 <span style="font-size:0.7rem;color:var(--dim);">Sort:</span>
@@ -1956,6 +2120,8 @@ const WATCHLIST_STORAGE_KEYS = {
     etfs: "watchlist-etfs"
 };
 const WATCHLIST_SORT_KEY = "watchlist-sort";
+const WATCHLIST_PIN_KEY = "watchlist-pins-stocks";
+const WATCHLIST_PIN_LIMIT = 2;
 const WATCHLIST_DEFAULTS = {
     stocks: ["AAPL","MSFT","NVDA","TSLA","AMD"],
     sectors: ["XLF","XLK","XLE","XLP","XLY","XLI","XLB","XLU","XLV","XLRE"],
@@ -2009,6 +2175,7 @@ function init() {
     buildTimeframeSettingsUI();
     loadTh();
     loadScales();      // NEW
+    initOrientation();
     initSettingsTabs();
     initNotes();
     initNewsControls();
@@ -2042,6 +2209,43 @@ function loadScales() {
     if (t) t.value = String(timer);
     if (y) y.value = String(yahoo);
     if (e) e.value = String(econ);
+}
+
+/* Layout orientation (portrait / landscape) */
+const ORIENTATION_KEY = "layout-orientation";
+function applyOrientation(mode, save = true) {
+    const next = (mode === "landscape") ? "landscape" : "portrait";
+    document.body.classList.toggle("landscape-mode", next === "landscape");
+    moveWatchlist(next === "landscape");
+    const sel = document.getElementById("layout-orientation");
+    if (sel) sel.value = next;
+    if (save) localStorage.setItem(ORIENTATION_KEY, next);
+}
+function moveWatchlist(isLandscape) {
+    const watchlist = document.querySelector(".watchlist-panel");
+    const anchor = document.getElementById("watchlist-anchor");
+    const appFrame = document.querySelector(".app-frame");
+    const newsWrapper = document.querySelector(".news-wrapper");
+    if (!watchlist || !anchor || !appFrame || !newsWrapper) return;
+
+    if (isLandscape) {
+        if (watchlist.parentElement !== appFrame) {
+            appFrame.insertBefore(watchlist, newsWrapper);
+        }
+    } else {
+        if (watchlist.parentElement !== anchor.parentElement) {
+            anchor.parentElement.insertBefore(watchlist, anchor.nextSibling);
+        }
+    }
+}
+function initOrientation() {
+    const saved = localStorage.getItem(ORIENTATION_KEY) || "portrait";
+    applyOrientation(saved, false);
+    const sel = document.getElementById("layout-orientation");
+    if (sel && !sel.dataset.bound) {
+        sel.dataset.bound = "1";
+        sel.addEventListener("change", () => applyOrientation(sel.value, true));
+    }
 }
 
 function initSettingsTabs() {
@@ -3238,10 +3442,56 @@ function initWatchlist() {
             refreshWatchlist();
         });
     }
+    bindWatchlistPins();
     refreshWatchlist();
     if (watchlistTimer) clearInterval(watchlistTimer);
     watchlistTimer = setInterval(refreshWatchlist, WATCHLIST_REFRESH_MS);
     setInterval(updateWatchlistRefreshState, 60 * 1000);
+}
+function bindWatchlistPins() {
+    const listEl = document.getElementById("wl-list-stocks");
+    if (!listEl || listEl.dataset.pinsBound) return;
+    listEl.dataset.pinsBound = "1";
+    listEl.addEventListener("click", (e) => {
+        const btn = e.target.closest(".watchlist-pin");
+        if (!btn) return;
+        const sym = (btn.dataset.symbol || "").toUpperCase();
+        if (!sym) return;
+        togglePinnedStock(sym);
+    });
+}
+function getPinnedStocks() {
+    const raw = localStorage.getItem(WATCHLIST_PIN_KEY) || "";
+    const pins = raw
+        .split(",")
+        .map(s => s.trim().toUpperCase())
+        .filter(Boolean);
+    if (pins.length > WATCHLIST_PIN_LIMIT) {
+        const trimmed = pins.slice(0, WATCHLIST_PIN_LIMIT);
+        setPinnedStocks(trimmed);
+        return trimmed;
+    }
+    return pins;
+}
+function setPinnedStocks(pins) {
+    localStorage.setItem(WATCHLIST_PIN_KEY, pins.join(","));
+}
+function togglePinnedStock(symbol) {
+    const pins = getPinnedStocks();
+    const idx = pins.indexOf(symbol);
+    if (idx >= 0) {
+        pins.splice(idx, 1);
+        setPinnedStocks(pins);
+        refreshWatchlist();
+        return;
+    }
+    if (pins.length >= WATCHLIST_PIN_LIMIT) {
+        console.warn("Pin limit reached (2). Unpin a stock first.");
+        return;
+    }
+    pins.unshift(symbol);
+    setPinnedStocks(pins);
+    refreshWatchlist();
 }
 function refreshWatchlist() {
     const stocks = getWatchlistSymbols("stocks");
@@ -3311,11 +3561,33 @@ function renderWatchlistColumn(group, symbols, bySymbol) {
         if (sortKey === "pct") return pb - pa;
         return 0;
     });
-    const rows = sorted.map(sym => {
+    let ordered = sorted;
+    let pinnedSet = null;
+    if (group === "stocks") {
+        const pins = getPinnedStocks();
+        const symbolMap = {};
+        symbols.forEach(s => { symbolMap[s.toUpperCase()] = s; });
+        const visiblePins = pins.filter(p => symbolMap[p]);
+        if (visiblePins.length !== pins.length) {
+            setPinnedStocks(visiblePins);
+        }
+        const pinned = visiblePins.map(p => symbolMap[p]).filter(Boolean);
+        pinnedSet = new Set(pinned.map(p => p.toUpperCase()));
+        ordered = [...pinned, ...sorted.filter(s => !pinnedSet.has(s.toUpperCase()))];
+    }
+    const rows = ordered.map(sym => {
         const q = bySymbol[sym.toUpperCase()];
+        const isPinned = group === "stocks" && pinnedSet && pinnedSet.has(sym.toUpperCase());
+        const pinBtn = (group === "stocks")
+            ? `<button class=\"watchlist-pin ${isPinned ? "active" : ""}\" data-symbol=\"${sym.toUpperCase()}\" title=\"${isPinned ? "Unpin" : "Pin"}\" aria-label=\"${isPinned ? "Unpin" : "Pin"} ${sym}\">` +
+                `<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\">` +
+                    `<path d=\"M9 2h6v2l-1.5 2V9l2 2v2h-7.4l-.6 9-1-.3.6-8.7H8V11l2-2V6L9 4V2zm2.5 8.5h1V6h-1v4.5z\"/>` +
+                `</svg>` +
+            `</button>`
+            : "";
         if (!q || q.regularMarketPrice == null) {
-            return '<div class=\"watchlist-row\">' +
-                `<div class=\"watchlist-symbol\">${sym}</div>` +
+            return `<div class=\"watchlist-row${isPinned ? " pinned" : ""}\">` +
+                `<div class=\"watchlist-symbol\">${pinBtn}<span>${sym}</span></div>` +
                 '<div class=\"watchlist-price\">--</div>' +
                 '<div class=\"watchlist-change\">--</div>' +
                 '<div class=\"watchlist-pct\">--</div>' +
@@ -3327,8 +3599,8 @@ function renderWatchlistColumn(group, symbols, bySymbol) {
         const changeClass = change > 0 ? "up" : (change < 0 ? "down" : "");
         const changeStr = (change >= 0 ? "+" : "") + change.toFixed(2);
         const pctStr = (pct >= 0 ? "+" : "") + pct.toFixed(2) + "%";
-        return `<div class=\"watchlist-row ${changeClass}\">` +
-            `<div class=\"watchlist-symbol\">${sym}</div>` +
+        return `<div class=\"watchlist-row ${changeClass}${isPinned ? " pinned" : ""}\">` +
+            `<div class=\"watchlist-symbol\">${pinBtn}<span>${sym}</span></div>` +
             `<div class=\"watchlist-price\">${price.toFixed(2)}</div>` +
             `<div class=\"watchlist-change ${changeClass}\">${changeStr}</div>` +
             `<div class=\"watchlist-pct\">${pctStr}</div>` +
