@@ -2,6 +2,7 @@
   "name": "tts-time-news-alert",
   "version": "1.0.0",
   "main": "electron-main.js",
+  "license": "MIT",
   "scripts": {
     "start": "electron .",
     "dev": "electron .",
